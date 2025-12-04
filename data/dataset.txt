@@ -1,1 +1,1 @@
-https://github.com/mellamanelpoeta/home_credit_risk_default
+https://www.kaggle.com/competitions/home-credit-default-risk/data
