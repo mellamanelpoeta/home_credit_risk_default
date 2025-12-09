@@ -1,0 +1,42 @@
+Préstamos más altos → mayor Pd
+Monto del crédito
+application: AMT_CREDIT
+No ser tan jóven y no tener historial crediticio → mayor Pd
+Edad
+application: DAYS_BIRTH
+Flag: primer crédito
+ToDo
+Mal historial crediticio → mayor Pd
+Score crediticio
+application: EXT_SOURCE_1
+application: EXT_SOURCE_2
+application: EXT_SOURCE_3
+Total de crédito disponible
+bureau: AMT_CREDIT_SUM_LIMIT
+Total de crédito ocupado
+bureau: AMT_CREDIT_SUM_LIMIT
+Flag: ya cayó en impago
+Cantidad de créditos previos
+Cantidad de créditos que cayeron en impago
+Menor ingreso → Mayor Pd
+Ingreso
+Grado educativo
+Más gastos → Mayor Pd
+Estado civil
+Cantidad de hijos
+Cantidad de préstamos
+Mayor deuda acumulada → Mayor Pd
+Total de crédito disponible
+Total de crédito ocupada
+Cantidad de préstamos
+Cantidad de préstamos activos
+Cantidad de consultas a buró
+Menos activos → Mayor Pd
+Ahorros
+Flag: tiene casa
+Flag: tiene coche
+Condiciones adversas de crédito → Mayor Pd
+Tasa de interés
+Mayor plazo → mayor Pd
+Plazo
+
