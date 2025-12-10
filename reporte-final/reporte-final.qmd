@@ -6,7 +6,7 @@ author:
   - name: "Juan Pablo Cordero"
   - name: "Jerónimo Deli"
   - name: "Romain S"
-date: "Diciembre 2025"
+date: "12-09-2025"
 format:
   html:
     theme: cosmo
@@ -26,7 +26,7 @@ execute:
   error: false
 jupyter: python3
 ---
-
+\newpage
 # Introducción
 
 ## Contexto del Problema
@@ -38,6 +38,16 @@ El acceso al crédito es un pilar fundamental para el desarrollo económico indi
 1. **Identificar clientes con alta probabilidad de incumplimiento** antes de otorgar el crédito
 2. **Comprender los factores que influyen en el impago** para diseñar políticas de mitigación
 3. **Equilibrar la inclusión financiera con la gestión del riesgo**
+
+Desde la perspectiva de la gestión de riesgos, el objetivo no es únicamente predecir quién hará o no hará default, sino **estimar probabilidades** que permitan tomar decisiones bajo restricciones de capital, regulación y apetito de riesgo. En este sentido, un modelo de probabilidad de impago se convierte en una herramienta cuantitativa clave para:
+
+- Definir **políticas de originación** (qué tipo de clientes aceptar o rechazar).
+- Ajustar **límites de crédito** y condiciones como plazo y tasa.
+- Alimentar modelos de **pérdida esperada** (PD × LGD × EAD) y de provisiones regulatorias.
+- Diseñar estrategias de **seguimiento temprano** (early warning) y cobranza preventiva.
+
+A lo largo del reporte, nuestro énfasis estará en balancear el desempeño estadístico del modelo con su **utilidad práctica** en la toma de decisiones crediticias.
+
 
 ## Marco Conceptual: El Grafo Causal del Impago
 
@@ -58,6 +68,19 @@ El impago crediticio puede originarse por dos vías principales:
 
 El grafo causal detallado nos muestra las relaciones entre las distintas variables que capturamos en los datos y cómo estas se relacionan con los dos mecanismos principales de impago.
 
+El grafo causal detallado sirve como una **capa intermedia** entre el conocimiento de negocio y la modelación estadística. Más allá de listar variables, nos obliga a responder preguntas como:
+
+- ¿Qué mecanismos generan realmente el impago (fraude vs. incapacidad de pago)?
+- ¿Qué variables son las que se correlacionan con impago?
+- ¿Qué información proviene del cliente, del buró u otras fuentes externas?
+
+En la práctica, este grafo:
+
+1. **Guía la ingeniería de variables**: por ejemplo, agrupar información de buró en indicadores de mora histórica, carga de deuda y número de créditos activos.
+2. **Ayuda a interpretar el modelo a posteriori**: si una variable aparece como importante en el modelo, podemos ubicarla en el grafo y entender si actúa como proxy de fraude, de capacidad de pago o de algún canal más específico.
+
+
+
 ## Hipótesis de Investigación
 
 Con base en el marco causal, formulamos las siguientes hipótesis que guiarán nuestro análisis:
@@ -77,7 +100,6 @@ Con base en el marco causal, formulamos las siguientes hipótesis que guiarán n
 
 1. ¿Cuáles son las variables con mayor poder predictivo para identificar clientes en riesgo de impago?
 2. ¿Qué modelo (Regresión Logística, Random Forest o XGBoost) ofrece el mejor balance entre interpretabilidad y poder predictivo?
-3. ¿Podemos reducir la dimensionalidad del problema sin perder capacidad predictiva?
 
 # Metodología y Datos
 
@@ -111,20 +133,30 @@ warnings.filterwarnings('ignore')
 plt.style.use('seaborn-v0_8-whitegrid')
 plt.rcParams['figure.figsize'] = (10, 6)
 plt.rcParams['font.size'] = 11
-sns.set_palette('husl')
 
 pd.set_option('display.max_columns', None)
 pd.set_option('display.float_format', lambda x: '%.3f' % x)
 ```
+Una característica importante de este dataset es su **estructura relacional**. La tabla `application_train` contiene la observación “principal” (cada fila es una solicitud de crédito), mientras que el resto de tablas describen el **historial del cliente en distintas dimensiones**:
+
+- `bureau` y `bureau_balance` capturan el comportamiento del cliente en otras instituciones financieras.
+- `previous_application`, `installments_payments` y `credit_card_balance` describen el ciclo de vida de créditos previos con Home Credit (originación, pagos, atrasos, etc.).
+- `POS_CASH_balance` complementa la información con productos tipo POS / cash loans.
+
+Esto implica dos retos principales:
+
+1. **Integración de información**: es necesario definir una estrategia para pasar de tablas transaccionales (múltiples registros por cliente) a variables agregadas por `SK_ID_CURR`.
+2. **Escalabilidad computacional**: algunas tablas tienen millones de filas; decisiones de agregación, muestreo y tipos de datos afectan directamente el tiempo de cómputo y el uso de memoria.
+
+La ingeniería de variables que describimos en la siguiente sección responde precisamente a estos retos.
 
 ## Carga de Datos
 
 ```{python}
 #| label: carga-datos
-#| code-fold: true
+#| echo: false
 #| code-summary: "Ver código de carga de datos"
 
-print("Cargando datasets...\n")
 
 app_train = pd.read_csv('../data/home-credit-default-risk/application_train.csv')
 bureau = pd.read_csv('../data/home-credit-default-risk/bureau.csv')
@@ -134,13 +166,7 @@ pos_cash = pd.read_csv('../data/home-credit-default-risk/POS_CASH_balance.csv')
 credit_card = pd.read_csv('../data/home-credit-default-risk/credit_card_balance.csv')
 installments = pd.read_csv('../data/home-credit-default-risk/installments_payments.csv')
 
-print(f"✓ Application Train: {app_train.shape[0]:,} usuarios")
-print(f"✓ Bureau: {bureau.shape[0]:,} registros")
-print(f"✓ Bureau Balance: {bureau_balance.shape[0]:,} registros")
-print(f"✓ Previous Application: {prev_app.shape[0]:,} registros")
-print(f"✓ POS Cash: {pos_cash.shape[0]:,} registros")
-print(f"✓ Credit Card: {credit_card.shape[0]:,} registros")
-print(f"✓ Installments: {installments.shape[0]:,} registros")
+
 ```
 
 ```{python}
@@ -166,7 +192,7 @@ display(datasets_info.style.hide(axis='index'))
 
 ## Variables Originales de Application Train
 
-La tabla principal `application_train.csv` contiene 122 variables que se pueden agrupar en las siguientes categorías:
+La tabla principal `application_train.csv` contiene 122 variables que se pueden agrupar en las siguientes categorías (mostramos las más relevantes):
 
 ### Variables Demográficas
 - `CODE_GENDER`: Género del solicitante
@@ -184,9 +210,9 @@ La tabla principal `application_train.csv` contiene 122 variables que se pueden 
 - `AMT_GOODS_PRICE`: Precio del bien a comprar
 
 ### Scores de Riesgo Externos
-- `EXT_SOURCE_1`: Score externo fuente 1
-- `EXT_SOURCE_2`: Score externo fuente 2
-- `EXT_SOURCE_3`: Score externo fuente 3
+- `EXT_SOURCE_1`: Score buro de crédito 1
+- `EXT_SOURCE_2`: Score buro de crédito 2
+- `EXT_SOURCE_3`: Score buro de crédito 3
 
 ### Variables de Activos
 - `FLAG_OWN_CAR`: Si posee automóvil
@@ -201,16 +227,11 @@ A partir de las tablas relacionadas, construimos variables que capturan diferent
 
 ```{python}
 #| label: feature-engineering
-#| code-fold: true
+#| echo: false
 #| code-summary: "Ver código de ingeniería de variables"
 
-print("="*80)
-print("GENERANDO DATASET COMPLETO - VERSIÓN OPTIMIZADA")
-print("="*80)
-print(f"\nTotal de usuarios: {len(app_train):,}")
 
 # PARTE 1: FEATURES BASE DE APPLICATION
-print("\nGenerando features base...")
 
 df = app_train[['SK_ID_CURR', 'TARGET']].copy()
 
@@ -256,11 +277,6 @@ bureau_cols = ['AMT_REQ_CREDIT_BUREAU_HOUR', 'AMT_REQ_CREDIT_BUREAU_DAY',
                'AMT_REQ_CREDIT_BUREAU_QRT', 'AMT_REQ_CREDIT_BUREAU_YEAR']
 df['TOTAL_CONSULTAS_BURO'] = app_train[bureau_cols].fillna(0).sum(axis=1)
 
-print("✓ Features base generadas")
-
-# PARTE 2: FEATURES DE BUREAU
-print("Procesando features de Bureau...")
-
 bureau_agg = bureau.groupby('SK_ID_CURR').agg({
     'AMT_CREDIT_SUM_LIMIT': 'sum',
     'AMT_CREDIT_SUM': 'sum',
@@ -295,10 +311,6 @@ df[bureau_fill_cols] = df[bureau_fill_cols].fillna(0)
 
 df['ES_PRIMER_CREDITO'] = (df['CANTIDAD_CREDITOS_BURO'] == 0).astype(int)
 
-print("✓ Features de Bureau generadas")
-
-# PARTE 3: FEATURES DE BUREAU BALANCE
-print("Procesando Bureau Balance...")
 
 bureau_balance_merged = bureau_balance.merge(
     bureau[['SK_ID_BUREAU', 'SK_ID_CURR']], 
@@ -330,11 +342,6 @@ df = df.merge(balance_agg[['SK_ID_CURR', 'MESES_CON_MORA', 'PCT_MESES_MORA', 'CR
 df[['MESES_CON_MORA', 'PCT_MESES_MORA', 'CREDITOS_CON_IMPAGO']] = \
     df[['MESES_CON_MORA', 'PCT_MESES_MORA', 'CREDITOS_CON_IMPAGO']].fillna(0)
 
-print("✓ Features de Bureau Balance generadas")
-
-# PARTE 4: FEATURES DE PREVIOUS APPLICATION
-print("Procesando Previous Applications...")
-
 prev_agg = prev_app.groupby('SK_ID_CURR').agg({
     'SK_ID_PREV': 'count',
     'RATE_INTEREST_PRIMARY': 'mean',
@@ -350,10 +357,6 @@ df = df.merge(prev_agg, on='SK_ID_CURR', how='left')
 df[['NUM_PRESTAMOS_PREVIOS', 'MONTO_PROMEDIO_PREVIO', 'TOTAL_CREDITO_HISTORICO']] = \
     df[['NUM_PRESTAMOS_PREVIOS', 'MONTO_PROMEDIO_PREVIO', 'TOTAL_CREDITO_HISTORICO']].fillna(0)
 
-print("✓ Features de Previous Applications generadas")
-
-# PARTE 5: FEATURES DE INSTALLMENTS
-print("Procesando Installments...")
 
 valid_installments = installments[installments['AMT_INSTALMENT'] > 0].copy()
 valid_installments['PAYMENT_RATIO'] = valid_installments['AMT_PAYMENT'] / valid_installments['AMT_INSTALMENT']
@@ -363,11 +366,6 @@ install_agg.columns = ['SK_ID_CURR', 'RATIO_PAGO_CUOTA']
 
 df = df.merge(install_agg, on='SK_ID_CURR', how='left')
 
-print("✓ Features de Installments generadas")
-
-# PARTE 6: FEATURES DE CREDIT CARD
-print("Procesando Credit Card Balance...")
-
 valid_cc = credit_card[credit_card['AMT_INST_MIN_REGULARITY'] > 0].copy()
 valid_cc['PAYMENT_MIN_RATIO'] = valid_cc['AMT_PAYMENT_CURRENT'] / valid_cc['AMT_INST_MIN_REGULARITY']
 
@@ -376,17 +374,25 @@ cc_agg.columns = ['SK_ID_CURR', 'RATIO_PAGO_MINIMO_TC']
 
 df = df.merge(cc_agg, on='SK_ID_CURR', how='left')
 
-print("✓ Features de Credit Card generadas")
 
-# RESULTADO FINAL
-print("\n" + "="*80)
-print("✅ DATASET COMPLETO GENERADO")
-print("="*80)
-print(f"Usuarios procesados: {len(df):,}")
-print(f"Variables: {len(df.columns)}")
-print(f"Shape: {df.shape}")
-print(f"Memoria: {df.memory_usage(deep=True).sum() / 1024**2:.2f} MB")
 ```
+La lógica de la ingeniería de variables que implementamos se puede resumir en cuatro bloques principales:
+
+1. **Perfil socio-demográfico y capacidad de pago**  
+   A partir de `application_train` construimos indicadores de edad (`EDAD_ANOS`), estructura familiar (`CNT_CHILDREN`, `CNT_FAM_MEMBERS`) e ingresos (`AMT_INCOME_TOTAL`, `INGRESO_PER_CAPITA`). Estos proxies buscan capturar la **capacidad de generar flujo de efectivo** para servir la deuda.
+
+2. **Carga de deuda y uso del crédito**  
+   De las tablas de buró (`bureau`, `bureau_balance`) extraemos el nivel de crédito actual (`TOTAL_DEUDA_ACTUAL`, `TOTAL_CREDITO_OTORGADO`), el número de créditos activos (`CREDITOS_ACTIVOS`) y la historia de mora (`PCT_MESES_MORA`, `CREDITOS_CON_IMPAGO`). Estas variables resumen el **apetito de endeudamiento** y el cumplimiento pasado del cliente.
+
+3. **Condiciones crediticias históricas**  
+   De `previous_application` construimos variables como `TASA_INTERES_PROMEDIO`, `PLAZO_PROMEDIO` y `TOTAL_CREDITO_HISTORICO`. El objetivo es capturar el tipo de condiciones bajo las cuales el cliente ha tomado crédito en el pasado, lo cual puede estar correlacionado con su riesgo (p.ej., tasas más altas pueden ser reflejo de mayor riesgo percibido).
+
+4. **Comportamiento de pago reciente**  
+   A partir de `installments_payments` y `credit_card_balance` construimos ratios como `RATIO_PAGO_CUOTA` y `RATIO_PAGO_MINIMO_TC`, que miden qué tan sistemáticamente el cliente paga sus cuotas completas o sólo mínimos. Estas son variables de **conducta reciente**, muy relevantes para anticipar problemas de liquidez.
+
+En conjunto, el dataset final combina información estática (perfil del cliente al momento de la solicitud) con información histórica dinámica (trayectoria de uso y pago de crédito), alineado con el grafo causal propuesto.
+
+Una observación importante es que muchas de las variables nuevas presentan valores faltantes (`NaN`). Esto puede deberse a que ciertos clientes no tienen historial en buró o no han tenido créditos previos, lo que limita la información disponible para su análisis.
 
 ## Distribución de la Variable Objetivo
 
@@ -400,26 +406,30 @@ target_dist.columns = ['Clase', 'Cantidad']
 target_dist['Porcentaje'] = target_dist['Cantidad'] / target_dist['Cantidad'].sum() * 100
 target_dist['Clase'] = target_dist['Clase'].map({0: 'No Default (0)', 1: 'Default (1)'})
 
-fig, ax = plt.subplots(figsize=(10, 6))
+fig, ax = plt.subplots(figsize=(8, 5))
 
-colors = ['#3498db', '#e74c3c']
+colors = ['#0a45abff', '#ffa057ff']
 bars = ax.bar(target_dist['Clase'], target_dist['Cantidad'], color=colors, edgecolor='black')
 ax.set_ylabel('Número de Clientes')
 ax.set_title('Distribución de Clases')
+ax.grid(False)
 for i, (q, p) in enumerate(zip(target_dist['Cantidad'], target_dist['Porcentaje'])):
     ax.text(i, q + 5000, f'{q:,}\n({p:.1f}%)', ha='center', fontsize=10)
 
 plt.tight_layout()
 plt.show()
-
-print(f"\nTasa de Default: {df['TARGET'].mean()*100:.2f}%")
 ```
 
-El dataset presenta un **desbalance significativo** con solo el ~8% de casos positivos (default). Este desbalance tiene implicaciones importantes:
+La tasa de default observada (~8%) es consistente con portafolios de consumo relativamente amplios y diversificados. Desde el punto de vista de modelación, este **desbalance de clases** implica que:
 
-1. Métricas como *accuracy* son engañosas (un modelo que predice siempre "no default" tendría 92% de accuracy)
-2. Debemos usar técnicas como `class_weight='balanced'` o `scale_pos_weight` en los modelos
-3. Las métricas PR-AUC y Recall son más informativas que ROC-AUC
+- Un modelo que ignore la clase minoritaria puede mostrar métricas aparentemente buenas (p. ej. alta accuracy), pero ser inútil para **detectar clientes realmente riesgosos**.
+- La función de pérdida “natural” del modelo está desbalanceada: equivocarse en un cliente “default” (falso negativo) es mucho más costoso que equivocarse en un “no default”.
+
+Por ello, adoptamos dos estrategias complementarias:
+
+1. Ajustar el modelo con pesos de clase (`class_weight='balanced'` o `scale_pos_weight`), de modo que los errores en la clase positiva tengan mayor penalización.
+2. Enfocarnos en métricas más sensibles al desbalance, como **PR-AUC** (Average Precision), **Recall** y análisis por **deciles de score**, en lugar de depender únicamente de ROC-AUC o accuracy.
+
 
 ## Análisis de Correlaciones
 
@@ -427,62 +437,121 @@ El dataset presenta un **desbalance significativo** con solo el ~8% de casos pos
 #| echo: false
 #| label: fig-correlation-heatmap
 #| fig-cap: "Heatmap de correlaciones entre variables numéricas"
+def calculate_correlation_between_features(df, features=None, top_k=15):
+    """
+    Genera un heatmap con los top_k pares de variables más correlacionados.
 
-# Matriz de correlaciones
-corr_matrix = df.corr(numeric_only=True)
+    El heatmap muestra una fila por par de variables y una sola columna
+    con el valor absoluto de la correlación.
+    """
+    # Si no se pasa lista de features, usamos solo variables numéricas
+    if features is None:
+        features = df.select_dtypes(include=[np.number]).columns.tolist()
 
-# Heatmap de correlación
-plt.figure(figsize=(14, 10))
-sns.heatmap(
-    corr_matrix,
-    annot=False,
-    cmap="coolwarm",
-    center=0,
-    linewidths=0.5
-)
-plt.title("Heatmap de Correlaciones", fontsize=14, fontweight="bold")
-plt.tight_layout()
-plt.show()
+    # Matriz de correlaciones absolutas solo para las features seleccionadas
+    corr_matrix = df[features].corr().abs()
+
+    # Tomar solo la mitad superior (sin diagonal) para evitar duplicados
+    mask = np.triu(np.ones_like(corr_matrix, dtype=bool), k=1)
+    corr_upper = corr_matrix.where(mask)
+
+    # Pasar a formato largo: (Var1, Var2, Corr)
+    pairs = (
+        corr_upper
+        .stack()          # elimina NaNs de la máscara inferior
+        .reset_index()
+    )
+    pairs.columns = ["Var1", "Var2", "Corr"]
+
+    # Ordenar por correlación de mayor a menor y quedarnos con top_k
+    top_pairs = pairs.sort_values("Corr", ascending=False).head(top_k)
+
+    # Construir matriz para el heatmap: una columna con la correlación
+    pair_labels = [f"{v1} – {v2}" for v1, v2 in zip(top_pairs["Var1"], top_pairs["Var2"])]
+    heatmap_data = top_pairs[["Corr"]].copy()
+    heatmap_data.index = pair_labels
+
+    # Graficar heatmap (top_k filas x 1 columna)
+    plt.figure(figsize=(8, 0.6 * top_k + 2))
+    sns.heatmap(
+        heatmap_data,
+        annot=True,
+        fmt=".2f",
+        cmap="coolwarm",
+        vmin=0,
+        vmax=1,
+        cbar_kws={"label": "|Correlación|"},
+        yticklabels=heatmap_data.index,
+    )
+    plt.xticks([0.5], ["|Correlación|"], rotation=0)
+    plt.yticks(rotation=0)
+    plt.title("Top 15 pares de variables más correlacionados", fontsize=14, fontweight="bold")
+    plt.tight_layout()
+    plt.show()
+
+
+# Llamar a la función usando todas las variables numéricas del df
+numeric_features = df.select_dtypes(include=[np.number]).drop(columns=['DAYS_BIRTH']).columns.tolist()
+calculate_correlation_between_features(df, features=numeric_features, top_k=20)
 ```
+
+El análisis de correlaciones muestra que muchas variables están fuertemente relacionadas entre sí, especialmente:
+
+- Montos monetarios derivados de la misma base (`AMT_CREDIT`, `AMT_ANNUITY`, `AMT_GOODS_PRICE`, etc.).
+- Scores externos (`EXT_SOURCE_1/2/3`) que, aunque provienen de fuentes distintas, tienden a moverse juntos.
+
+En modelos lineales como la regresión logística, la **multicolinealidad** puede inflar varianzas de los coeficientes y dificultar la interpretación. Aunque los modelos de árboles son más robustos a este problema, mantener demasiadas variables redundantes puede:
+
+- Introducir ruido innecesario.
+- Aumentar el costo computacional.
+- Complicar la comunicación de resultados.
+
+Por ello, en la etapa de **selección de variables** optamos por:
+
+- Conservar métricas sintéticas más interpretables (p.ej. `SCORE_PROMEDIO`, `CREDIT_INCOME_RATIO`).
+- Eliminar componentes redundantes (p.ej. `EXT_SOURCE_1/2/3` por separado, o montos crudos que ya están en ratios).
+- Mantener un subconjunto manejable de variables con significado económico claro, manteniendo el foco en **calidad sobre cantidad** de features.
+- Hicimos un análisis de VIF (Variance Inflation Factor) de forma iterativa para eliminar variables con alta multicolinealidad.
+
 
 ```{python}
 #| echo: false
 #| label: tbl-top-correlations
 #| tbl-cap: "Top 20 pares de variables más correlacionados"
 
-# Top correlaciones
-corr_pairs = (
-    corr_matrix
-    .abs()
-    .unstack()
-    .sort_values(ascending=False)
-)
+# # Top correlaciones
+# corr_pairs = (
+#     corr_matrix
+#     .abs()
+#     .unstack()
+#     .sort_values(ascending=False)
+# )
 
-# Filtrar duplicados y autocorrelaciones
-corr_pairs = corr_pairs[corr_pairs < 1]
+# # Filtrar duplicados y autocorrelaciones
+# corr_pairs = corr_pairs[corr_pairs < 1]
 
-# Mostrar top 10 únicas
-seen = set()
-top_corr = []
-for idx, val in corr_pairs.items():
-    pair = tuple(sorted([idx[0], idx[1]]))
-    if pair not in seen:
-        seen.add(pair)
-        top_corr.append({'Par de Variables': f'{idx[0]} - {idx[1]}', 'Correlación': val})
-    if len(top_corr) >= 10:
-        break
+# # Mostrar top 10 únicas
+# seen = set()
+# top_corr = []
+# for idx, val in corr_pairs.items():
+#     pair = tuple(sorted([idx[0], idx[1]]))
+#     if pair not in seen:
+#         seen.add(pair)
+#         top_corr.append({'Par de Variables': f'{idx[0]} - {idx[1]}', 'Correlación': val})
+#     if len(top_corr) >= 10:
+#         break
 
-top_corr_df = pd.DataFrame(top_corr)
-display(top_corr_df.style.hide(axis='index').format({'Correlación': '{:.3f}'}))
+# top_corr_df = pd.DataFrame(top_corr)
+# display(top_corr_df.style.hide(axis='index').format({'Correlación': '{:.3f}'}))
 ```
-
+\newpage
 ## Selección de Variables
 
 Eliminamos variables redundantes para reducir la multicolinealidad:
 
 ```{python}
 #| label: variable-selection
-#| code-fold: true
+#| echo: false
 #| code-summary: "Ver código de selección de variables"
 
 # Drop de variables redundantes/derivadas
@@ -518,7 +587,7 @@ df = df.drop(columns=[
     'CANTIDAD_CREDITOS_BURO'
 ])
 
-print(f"Variables restantes: {df.shape[1]}")
+print(f"Variables restantes: {df.drop(columns=['SK_ID_CURR', 'TARGET']).shape[1]}")
 print(f"Observaciones: {df.shape[0]:,}")
 print(f"\nVariables en el modelo final:")
 for i, col in enumerate(df.columns, 1):
@@ -548,30 +617,30 @@ $$
 #| label: fig-sigmoide
 #| fig-cap: "Función Sigmoide (Logística)"
 
-fig, ax = plt.subplots(figsize=(10, 6))
+# fig, ax = plt.subplots(figsize=(10, 6))
 
-z = np.linspace(-10, 10, 200)
-sigmoid = 1 / (1 + np.exp(-z))
+# z = np.linspace(-10, 10, 200)
+# sigmoid = 1 / (1 + np.exp(-z))
 
-ax.plot(z, sigmoid, 'b-', linewidth=2.5, label=r'$\sigma(z) = \frac{1}{1 + e^{-z}}$')
-ax.axhline(y=0.5, color='red', linestyle='--', linewidth=1, label='Umbral de decisión (0.5)')
-ax.axhline(y=0, color='gray', linestyle='-', linewidth=0.5, alpha=0.5)
-ax.axhline(y=1, color='gray', linestyle='-', linewidth=0.5, alpha=0.5)
-ax.axvline(x=0, color='gray', linestyle='-', linewidth=0.5, alpha=0.5)
+# ax.plot(z, sigmoid, 'b-', linewidth=2.5, label=r'$\sigma(z) = \frac{1}{1 + e^{-z}}$')
+# ax.axhline(y=0.5, color='red', linestyle='--', linewidth=1, label='Umbral de decisión (0.5)')
+# ax.axhline(y=0, color='gray', linestyle='-', linewidth=0.5, alpha=0.5)
+# ax.axhline(y=1, color='gray', linestyle='-', linewidth=0.5, alpha=0.5)
+# ax.axvline(x=0, color='gray', linestyle='-', linewidth=0.5, alpha=0.5)
 
-ax.fill_between(z, sigmoid, 0.5, where=(sigmoid > 0.5), alpha=0.3, color='red', label='Clase 1 (Default)')
-ax.fill_between(z, sigmoid, 0.5, where=(sigmoid < 0.5), alpha=0.3, color='blue', label='Clase 0 (No Default)')
+# ax.fill_between(z, sigmoid, 0.5, where=(sigmoid > 0.5), alpha=0.3, color='red', label='Clase 1 (Default)')
+# ax.fill_between(z, sigmoid, 0.5, where=(sigmoid < 0.5), alpha=0.3, color='blue', label='Clase 0 (No Default)')
 
-ax.set_xlabel('z (combinación lineal)', fontsize=12)
-ax.set_ylabel('P(Y=1|X)', fontsize=12)
-ax.set_title('Función Sigmoide para Clasificación Binaria', fontsize=14, fontweight='bold')
-ax.legend(loc='center right')
-ax.grid(alpha=0.3)
-ax.set_xlim(-10, 10)
-ax.set_ylim(-0.05, 1.05)
+# ax.set_xlabel('z (combinación lineal)', fontsize=12)
+# ax.set_ylabel('P(Y=1|X)', fontsize=12)
+# ax.set_title('Función Sigmoide para Clasificación Binaria', fontsize=14, fontweight='bold')
+# ax.legend(loc='center right')
+# ax.grid(alpha=0.3)
+# ax.set_xlim(-10, 10)
+# ax.set_ylim(-0.05, 1.05)
 
-plt.tight_layout()
-plt.show()
+# plt.tight_layout()
+# plt.show()
 ```
 
 ### Interpretación de Coeficientes
@@ -606,7 +675,7 @@ $$
 
 ```{python}
 #| label: logistic-regression
-#| code-fold: true
+#| echo: false
 #| code-summary: "Ver código del modelo de Regresión Logística"
 
 # Configuración
@@ -714,17 +783,15 @@ test_ap_lr = average_precision_score(y_test_lr, y_test_proba_lr)
 
 logreg_results = pd.DataFrame({
     'Métrica': ['ROC-AUC', 'Average Precision', 'Accuracy'],
-    'Train': [train_auc_lr, train_ap_lr, (y_train_pred_lr == y_train_lr).mean()],
+    #'Train': [train_auc_lr, train_ap_lr, (y_train_pred_lr == y_train_lr).mean()],
     'Test': [test_auc_lr, test_ap_lr, (y_test_pred_lr == y_test_lr).mean()],
-    'Diferencia': [abs(train_auc_lr - test_auc_lr), abs(train_ap_lr - test_ap_lr), 
-                   abs((y_train_pred_lr == y_train_lr).mean() - (y_test_pred_lr == y_test_lr).mean())]
+    # 'Diferencia': [abs(train_auc_lr - test_auc_lr), abs(train_ap_lr - test_ap_lr), 
+    #                abs((y_train_pred_lr == y_train_lr).mean() - (y_test_pred_lr == y_test_lr).mean())]
 })
 
 display(logreg_results.style.hide(axis='index')
         .format({'Train': '{:.4f}', 'Test': '{:.4f}', 'Diferencia': '{:+.4f}'}))
 ```
-
-### Matriz de Confusión
 
 ```{python}
 #| echo: false
@@ -753,8 +820,6 @@ print(f"  Falsos Positivos (FP): {cm_lr[0,1]:,} - Predijo 'Default' pero pagó")
 print(f"  Falsos Negativos (FN): {cm_lr[1,0]:,} - Predijo 'Pago' pero hizo default")
 print(f"  Verdaderos Positivos (TP): {cm_lr[1,1]:,} - Predijo 'Default' y si hizo default")
 ```
-
-### Importancia de Variables
 
 ```{python}
 #| echo: false
@@ -797,11 +862,56 @@ plt.show()
 #| label: fig-curves-logreg
 #| fig-cap: "Curvas ROC y Precision-Recall - Regresión Logística"
 
-fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 
 # ROC Curve
 fpr_lr, tpr_lr, _ = roc_curve(y_test_lr, y_test_proba_lr)
-axes[0].plot(fpr_lr, tpr_lr, linewidth=2, color='steelblue', label=f'ROC (AUC = {test_auc_lr:.4f})')
+# axes[0].plot(fpr_lr, tpr_lr, linewidth=2, color='steelblue', label=f'ROC (AUC = {test_auc_lr:.4f})')
+# axes[0].plot([0, 1], [0, 1], 'k--', linewidth=1, label='Random')
+# axes[0].set_xlabel('False Positive Rate', fontsize=12)
+# axes[0].set_ylabel('True Positive Rate', fontsize=12)
+# axes[0].set_title('ROC Curve - Test Set', fontsize=14, fontweight='bold')
+# axes[0].legend()
+# axes[0].grid(alpha=0.3)
+
+# # Precision-Recall Curve
+# precision_lr, recall_lr, _ = precision_recall_curve(y_test_lr, y_test_proba_lr)
+# sort_idx_lr = np.argsort(recall_lr)
+# recall_sorted_lr = recall_lr[sort_idx_lr]
+# precision_sorted_lr = precision_lr[sort_idx_lr]
+
+# axes[1].plot(recall_sorted_lr, precision_sorted_lr, linewidth=2, color='steelblue', label=f'PR (AP = {test_ap_lr:.4f})')
+# axes[1].axhline(y=y_test_lr.mean(), color='gray', linestyle='--', linewidth=1, label=f'Baseline ({y_test_lr.mean():.3f})')
+# axes[1].set_xlabel('Recall (TPR)', fontsize=12)
+# axes[1].set_ylabel('Precision', fontsize=12)
+# axes[1].set_title('Precision-Recall Curve - Test Set', fontsize=14, fontweight='bold')
+# axes[1].set_xlim([0, 1])
+# axes[1].set_ylim([0, 1])
+# axes[1].legend()
+# axes[1].grid(alpha=0.3)
+
+# plt.tight_layout()
+# plt.show()
+
+# Calcular deciles
+test_results = pd.DataFrame({
+    'y_true': y_test_lr,
+    'y_proba': y_test_proba_lr
+})
+test_results['decil'] = pd.qcut(test_results['y_proba'], q=10, labels=False, duplicates='drop') + 1
+
+# Calcular TPR por decil
+decil_stats = test_results.groupby('decil').agg({
+    'y_true': ['sum', 'count', 'mean']
+}).reset_index()
+decil_stats.columns = ['decil', 'positivos', 'total', 'tpr']
+decil_stats = decil_stats.sort_values('decil', ascending=False)
+
+# Crear gráficas
+fig, axes = plt.subplots(1, 3, figsize=(20, 6))
+
+# ROC Curve
+fpr, tpr, _ = roc_curve(y_test_lr, y_test_proba_lr)
+axes[0].plot(fpr, tpr, linewidth=2, label=f'ROC (AUC = {test_auc_lr:.4f})')
 axes[0].plot([0, 1], [0, 1], 'k--', linewidth=1, label='Random')
 axes[0].set_xlabel('False Positive Rate', fontsize=12)
 axes[0].set_ylabel('True Positive Rate', fontsize=12)
@@ -809,13 +919,15 @@ axes[0].set_title('ROC Curve - Test Set', fontsize=14, fontweight='bold')
 axes[0].legend()
 axes[0].grid(alpha=0.3)
 
-# Precision-Recall Curve
-precision_lr, recall_lr, _ = precision_recall_curve(y_test_lr, y_test_proba_lr)
+# Precision-Recall Curve (Recall en X, Precision en Y)
+precision_lr, recall_lr, thresholds_pr = precision_recall_curve(y_test_lr, y_test_proba_lr)
+
+# Ordenar por recall ascendente para graficar correctamente
 sort_idx_lr = np.argsort(recall_lr)
 recall_sorted_lr = recall_lr[sort_idx_lr]
 precision_sorted_lr = precision_lr[sort_idx_lr]
 
-axes[1].plot(recall_sorted_lr, precision_sorted_lr, linewidth=2, color='steelblue', label=f'PR (AP = {test_ap_lr:.4f})')
+axes[1].plot(recall_sorted_lr, precision_sorted_lr, linewidth=2, label=f'PR (AP = {test_ap_lr:.4f})')
 axes[1].axhline(y=y_test_lr.mean(), color='gray', linestyle='--', linewidth=1, label=f'Baseline ({y_test_lr.mean():.3f})')
 axes[1].set_xlabel('Recall (TPR)', fontsize=12)
 axes[1].set_ylabel('Precision', fontsize=12)
@@ -825,9 +937,35 @@ axes[1].set_ylim([0, 1])
 axes[1].legend()
 axes[1].grid(alpha=0.3)
 
+# TPR por Decil
+axes[2].bar(decil_stats['decil'], decil_stats['tpr'], color='steelblue', alpha=0.7, edgecolor='black')
+axes[2].set_xlabel('Decil de Score (10 = Mayor Riesgo)', fontsize=12)
+axes[2].set_ylabel('True Positive Rate (TPR)', fontsize=12)
+axes[2].set_title('TPR por Decil de Probabilidad', fontsize=14, fontweight='bold')
+axes[2].set_xticks(range(1, 11))
+axes[2].grid(alpha=0.3, axis='y')
+axes[2].set_ylim(0, 1)
+
+# Añadir valores en las barras
+for i, row in decil_stats.iterrows():
+    axes[2].text(row['decil'], row['tpr'] + 0.02, f"{row['tpr']:.2f}", 
+                ha='center', va='bottom', fontsize=10)
+
 plt.tight_layout()
-plt.show()
 ```
+En el caso de la regresión logística, el ROC-AUC y el Average Precision en el set de prueba indican que el modelo logra **discriminar razonablemente bien** entre clientes que harán default y aquellos que no, aun en presencia de fuerte desbalance. El hecho de que las métricas de entrenamiento y prueba sean cercanas sugiere que el modelo **no presenta overfitting severo**, lo cual es coherente con la regularización L2 y la relativa parsimonia del conjunto de variables.
+
+Dado que se trata de un modelo lineal, la información contenida en los coeficientes se puede traducir a **insights de negocio**:
+
+- Coeficientes positivos indican variables que **incrementan** el riesgo de impago (por ejemplo, mayores ratios de deuda o mayor proporción de meses con mora).
+- Coeficientes negativos corresponden a variables que **reducen** el riesgo (p. ej. mayores ingresos per cápita o mejores scores externos).
+
+Este modelo, aun cuando no es el de mejor desempeño, proporciona una **línea base interpretable** contra la cual podemos comparar modelos más complejos.
+
+La matriz de confusión permite visualizar con claridad los **errores de clasificación**:
+
+- Los **falsos negativos (FN)** corresponden a clientes que el modelo considera “buenos” pero que terminan en default; son los más costosos desde el punto de vista del riesgo.
+- Los **falsos positivos (FP)** son clientes rechazados o tratados como de alto riesgo, aunque finalmente hubieran pagado; reflejan un costo de **oportunidad** y posible pérdida de negocio.
 
 # Random Forest
 
@@ -860,7 +998,7 @@ Donde $p_{tk}$ es la proporción de observaciones de clase $k$ en el nodo $t$.
 
 ```{python}
 #| label: random-forest
-#| code-fold: true
+#| echo: false
 #| code-summary: "Ver código del modelo Random Forest"
 
 # Configuración
@@ -956,21 +1094,19 @@ test_ap_rf = average_precision_score(y_test_rf, y_test_proba_rf)
 
 rf_results = pd.DataFrame({
     'Métrica': ['ROC-AUC', 'Average Precision', 'Accuracy', 'Overfitting (Gap)'],
-    'Train': [train_auc_rf, train_ap_rf, (y_train_pred_rf == y_train_rf).mean(), '-'],
+    #'Train': [train_auc_rf, train_ap_rf, (y_train_pred_rf == y_train_rf).mean(), '-'],
     'Test': [test_auc_rf, test_ap_rf, (y_test_pred_rf == y_test_rf).mean(), abs(train_auc_rf - test_auc_rf)]
 })
 
 display(rf_results.style.hide(axis='index'))
 
-print(f"\nAnálisis de Overfitting:")
-diff_auc_rf = abs(train_auc_rf - test_auc_rf)
-if diff_auc_rf > 0.10:
-    print(f"  ⚠️ Overfitting detectado (diferencia = {diff_auc_rf:.4f} > 10%)")
-else:
-    print(f"  ✓ Generalización aceptable (diferencia = {diff_auc_rf:.4f})")
+# print(f"\nAnálisis de Overfitting:")
+# diff_auc_rf = abs(train_auc_rf - test_auc_rf)
+# if diff_auc_rf > 0.10:
+#     print(f"  ⚠️ Overfitting detectado (diferencia = {diff_auc_rf:.4f} > 10%)")
+# else:
+#     print(f"  ✓ Generalización aceptable (diferencia = {diff_auc_rf:.4f})")
 ```
-
-### Matriz de Confusión
 
 ```{python}
 #| echo: false
@@ -994,8 +1130,6 @@ plt.tight_layout()
 plt.show()
 ```
 
-### Importancia de Variables
-
 ```{python}
 #| echo: false
 #| label: fig-importancia-rf
@@ -1008,24 +1142,101 @@ feature_importance_rf = pd.DataFrame({
 
 top_features_rf = feature_importance_rf.head(15)
 
-fig, ax = plt.subplots(figsize=(10, 8))
+# fig, ax = plt.subplots(figsize=(8, 6))
 
-bars = ax.barh(top_features_rf['Variable'], top_features_rf['Importancia'], 
-               color='forestgreen', alpha=0.7, edgecolor='black')
+# bars = ax.barh(top_features_rf['Variable'], top_features_rf['Importancia'], 
+#                color='forestgreen', alpha=0.7, edgecolor='black')
 
-ax.set_xlabel('Importancia (Reducción promedio de Gini)')
-ax.set_title('Importancia de Variables - Random Forest\n(Capacidad para separar clases)', fontsize=14, fontweight='bold')
-ax.invert_yaxis()
-ax.grid(axis='x', alpha=0.3)
+# ax.set_xlabel('Importancia (Reducción promedio de Gini)')
+# ax.set_title('Importancia de Variables - Random Forest\n(Capacidad para separar clases)', fontsize=14, fontweight='bold')
+# ax.invert_yaxis()
+# ax.grid(axis='x', alpha=0.3)
 
-for bar, val in zip(bars, top_features_rf['Importancia']):
-    ax.text(val + 0.005, bar.get_y() + bar.get_height()/2, f'{val:.3f}', 
-            va='center', fontsize=9)
+# for bar, val in zip(bars, top_features_rf['Importancia']):
+#     ax.text(val + 0.005, bar.get_y() + bar.get_height()/2, f'{val:.3f}', 
+#             va='center', fontsize=9)
+
+# plt.tight_layout()
+# plt.show()
+
+# print(f"\n✓ SCORE_PROMEDIO domina con {top_features_rf.iloc[0]['Importancia']*100:.1f}% de la importancia total")
+```
+\newpage
+
+```{python}
+#| echo: false
+# =============================================================================
+# 14. VISUALIZACIONES
+# =============================================================================
+
+# Calcular deciles
+test_results = pd.DataFrame({
+    'y_true': y_test_rf,
+    'y_proba': y_test_proba_rf
+})
+test_results['decil'] = pd.qcut(test_results['y_proba'], q=10, labels=False, duplicates='drop') + 1
+
+# Calcular TPR por decil
+decil_stats = test_results.groupby('decil').agg({
+    'y_true': ['sum', 'count', 'mean']
+}).reset_index()
+decil_stats.columns = ['decil', 'positivos', 'total', 'tpr']
+decil_stats = decil_stats.sort_values('decil', ascending=False)
+
+# Crear gráficas
+fig, axes = plt.subplots(2, 2, figsize=(16, 14))
+
+# ROC Curve
+fpr, tpr, _ = roc_curve(y_test_rf, y_test_proba_rf)
+axes[0, 0].plot(fpr, tpr, linewidth=2, color='green', label=f'ROC (AUC = {test_auc_rf:.4f})')
+axes[0, 0].plot([0, 1], [0, 1], 'k--', linewidth=1, label='Random')
+axes[0, 0].set_xlabel('False Positive Rate', fontsize=12)
+axes[0, 0].set_ylabel('True Positive Rate', fontsize=12)
+axes[0, 0].set_title('ROC Curve - Test Set (Random Forest)', fontsize=14, fontweight='bold')
+axes[0, 0].legend()
+axes[0, 0].grid(alpha=0.3)
+
+# Precision-Recall Curve
+precision, recall, thresholds_pr = precision_recall_curve(y_test_rf, y_test_proba_rf)
+sort_idx = np.argsort(recall)
+recall_sorted = recall[sort_idx]
+precision_sorted = precision[sort_idx]
+
+axes[0, 1].plot(recall_sorted, precision_sorted, linewidth=2, color='green', label=f'PR (AP = {test_ap_rf:.4f})')
+axes[0, 1].axhline(y=y_test_rf.mean(), color='gray', linestyle='--', linewidth=1, label=f'Baseline ({y_test_rf.mean():.3f})')
+axes[0, 1].set_xlabel('Recall (TPR)', fontsize=12)
+axes[0, 1].set_ylabel('Precision', fontsize=12)
+axes[0, 1].set_title('Precision-Recall Curve - Test Set', fontsize=14, fontweight='bold')
+axes[0, 1].set_xlim([0, 1])
+axes[0, 1].set_ylim([0, 1])
+axes[0, 1].legend()
+axes[0, 1].grid(alpha=0.3)
+
+# TPR por Decil
+axes[1, 0].bar(decil_stats['decil'], decil_stats['tpr'], color='green', alpha=0.7, edgecolor='black')
+axes[1, 0].set_xlabel('Decil de Score (10 = Mayor Riesgo)', fontsize=12)
+axes[1, 0].set_ylabel('True Positive Rate (TPR)', fontsize=12)
+axes[1, 0].set_title('TPR por Decil de Probabilidad', fontsize=14, fontweight='bold')
+axes[1, 0].set_xticks(range(1, 11))
+axes[1, 0].grid(alpha=0.3, axis='y')
+axes[1, 0].set_ylim(0, 1)
+
+for i, row in decil_stats.iterrows():
+    axes[1, 0].text(row['decil'], row['tpr'] + 0.02, f"{row['tpr']:.2f}", 
+                ha='center', va='bottom', fontsize=10)
+
+# Feature Importance (Top 15)
+top_features = feature_importance_rf.head(15)
+axes[1, 1].barh(range(len(top_features)), top_features['Importancia'].values, color='green', alpha=0.7, edgecolor='black')
+axes[1, 1].set_yticks(range(len(top_features)))
+axes[1, 1].set_yticklabels(top_features['Variable'].values)
+axes[1, 1].set_xlabel('Importancia (Gain)', fontsize=12)
+axes[1, 1].set_title('Top 15 Variables Mas Importantes', fontsize=14, fontweight='bold')
+axes[1, 1].invert_yaxis()
+axes[1, 1].grid(alpha=0.3, axis='x')
 
 plt.tight_layout()
 plt.show()
-
-print(f"\n✓ SCORE_PROMEDIO domina con {top_features_rf.iloc[0]['Importancia']*100:.1f}% de la importancia total")
 ```
 
 # XGBoost
@@ -1069,7 +1280,7 @@ $$
 
 ```{python}
 #| label: xgboost
-#| code-fold: true
+#| echo: false
 #| code-summary: "Ver código del modelo XGBoost"
 
 # Configuración XGBoost
@@ -1176,18 +1387,18 @@ test_ap_xgb = average_precision_score(y_test_xgb, y_test_proba_xgb)
 
 xgb_results = pd.DataFrame({
     'Métrica': ['ROC-AUC', 'Average Precision', 'Accuracy', 'Overfitting (Gap)'],
-    'Train': [train_auc_xgb, train_ap_xgb, (y_train_pred_xgb == y_train_xgb).mean(), '-'],
+    #'Train': [train_auc_xgb, train_ap_xgb, (y_train_pred_xgb == y_train_xgb).mean(), '-'],
     'Test': [test_auc_xgb, test_ap_xgb, (y_test_pred_xgb == y_test_xgb).mean(), abs(train_auc_xgb - test_auc_xgb)]
 })
 
 display(xgb_results.style.hide(axis='index'))
 
-print(f"\nAnálisis de Overfitting:")
-diff_auc_xgb = abs(train_auc_xgb - test_auc_xgb)
-if diff_auc_xgb < 0.05:
-    print(f"  ✓ Buena generalización (diferencia = {diff_auc_xgb:.4f} < 5%)")
-else:
-    print(f"  ⚠️ Posible overfitting (diferencia = {diff_auc_xgb:.4f})")
+# print(f"\nAnálisis de Overfitting:")
+# diff_auc_xgb = abs(train_auc_xgb - test_auc_xgb)
+# if diff_auc_xgb < 0.05:
+#     print(f"  ✓ Buena generalización (diferencia = {diff_auc_xgb:.4f} < 5%)")
+# else:
+#     print(f"  ⚠️ Posible overfitting (diferencia = {diff_auc_xgb:.4f})")
 ```
 
 ### Matriz de Confusión
@@ -1228,23 +1439,120 @@ feature_importance_xgb = pd.DataFrame({
 
 top_features_xgb = feature_importance_xgb.head(15)
 
-fig, ax = plt.subplots(figsize=(10, 8))
+# fig, ax = plt.subplots(figsize=(10, 8))
 
-bars = ax.barh(top_features_xgb['Variable'], top_features_xgb['Importancia'], 
-               color='#E94F37', alpha=0.7, edgecolor='black')
+# bars = ax.barh(top_features_xgb['Variable'], top_features_xgb['Importancia'], 
+#                color='#E94F37', alpha=0.7, edgecolor='black')
 
-ax.set_xlabel('Importancia (Gain)')
-ax.set_title('Importancia de Variables - XGBoost\n(Ganancia promedio en splits)', fontsize=14, fontweight='bold')
-ax.invert_yaxis()
-ax.grid(axis='x', alpha=0.3)
+# ax.set_xlabel('Importancia (Gain)')
+# ax.set_title('Importancia de Variables - XGBoost\n(Ganancia promedio en splits)', fontsize=14, fontweight='bold')
+# ax.invert_yaxis()
+# ax.grid(axis='x', alpha=0.3)
 
-for bar, val in zip(bars, top_features_xgb['Importancia']):
-    ax.text(val + 0.003, bar.get_y() + bar.get_height()/2, f'{val:.3f}', 
-            va='center', fontsize=9)
+# for bar, val in zip(bars, top_features_xgb['Importancia']):
+#     ax.text(val + 0.003, bar.get_y() + bar.get_height()/2, f'{val:.3f}', 
+#             va='center', fontsize=9)
+
+# plt.tight_layout()
+# plt.show()
+```
+\newpage
+
+```{python}
+#| echo: false
+# =============================================================================
+# 14. VISUALIZACIONES
+# =============================================================================
+
+# Calcular deciles
+test_results = pd.DataFrame({
+    'y_true': y_test_xgb,
+    'y_proba': y_test_proba_xgb
+})
+test_results['decil'] = pd.qcut(test_results['y_proba'], q=10, labels=False, duplicates='drop') + 1
+
+# Calcular TPR por decil
+decil_stats = test_results.groupby('decil').agg({
+    'y_true': ['sum', 'count', 'mean']
+}).reset_index()
+decil_stats.columns = ['decil', 'positivos', 'total', 'tpr']
+decil_stats = decil_stats.sort_values('decil', ascending=False)
+
+# Crear gráficas
+fig, axes = plt.subplots(2, 2, figsize=(16, 14))
+
+# ROC Curve
+fpr, tpr, _ = roc_curve(y_test_xgb, y_test_proba_xgb)
+axes[0, 0].plot(fpr, tpr, linewidth=2, color='orange', label=f'ROC (AUC = {test_auc_xgb:.4f})')
+axes[0, 0].plot([0, 1], [0, 1], 'k--', linewidth=1, label='Random')
+axes[0, 0].set_xlabel('False Positive Rate', fontsize=12)
+axes[0, 0].set_ylabel('True Positive Rate', fontsize=12)
+axes[0, 0].set_title('ROC Curve - Test Set (XGBoost)', fontsize=14, fontweight='bold')
+axes[0, 0].legend()
+axes[0, 0].grid(alpha=0.3)
+
+# Precision-Recall Curve
+precision, recall, thresholds_pr = precision_recall_curve(y_test_xgb, y_test_proba_xgb)
+sort_idx = np.argsort(recall)
+recall_sorted = recall[sort_idx]
+precision_sorted = precision[sort_idx]
+
+axes[0, 1].plot(recall_sorted, precision_sorted, linewidth=2, color='orange', label=f'PR (AP = {test_ap_xgb:.4f})')
+axes[0, 1].axhline(y=y_test_xgb.mean(), color='gray', linestyle='--', linewidth=1, label=f'Baseline ({y_test_xgb.mean():.3f})')
+axes[0, 1].set_xlabel('Recall (TPR)', fontsize=12)
+axes[0, 1].set_ylabel('Precision', fontsize=12)
+axes[0, 1].set_title('Precision-Recall Curve - Test Set', fontsize=14, fontweight='bold')
+axes[0, 1].set_xlim([0, 1])
+axes[0, 1].set_ylim([0, 1])
+axes[0, 1].legend()
+axes[0, 1].grid(alpha=0.3)
+
+# TPR por Decil
+axes[1, 0].bar(decil_stats['decil'], decil_stats['tpr'], color='orange', alpha=0.7, edgecolor='black')
+axes[1, 0].set_xlabel('Decil de Score (10 = Mayor Riesgo)', fontsize=12)
+axes[1, 0].set_ylabel('True Positive Rate (TPR)', fontsize=12)
+axes[1, 0].set_title('TPR por Decil de Probabilidad', fontsize=14, fontweight='bold')
+axes[1, 0].set_xticks(range(1, 11))
+axes[1, 0].grid(alpha=0.3, axis='y')
+axes[1, 0].set_ylim(0, 1)
+
+for i, row in decil_stats.iterrows():
+    axes[1, 0].text(row['decil'], row['tpr'] + 0.02, f"{row['tpr']:.2f}", 
+                ha='center', va='bottom', fontsize=10)
+
+# Feature Importance (Top 15)
+top_features = feature_importance_xgb.head(15)
+axes[1, 1].barh(range(len(top_features)), top_features['Importancia'].values, color='orange', alpha=0.7, edgecolor='black')
+axes[1, 1].set_yticks(range(len(top_features)))
+axes[1, 1].set_yticklabels(top_features['Variable'].values)
+axes[1, 1].set_xlabel('Importancia (Gain)', fontsize=12)
+axes[1, 1].set_title('Top 15 Variables Mas Importantes', fontsize=14, fontweight='bold')
+axes[1, 1].invert_yaxis()
+axes[1, 1].grid(alpha=0.3, axis='x')
 
 plt.tight_layout()
 plt.show()
+
 ```
+Tanto Random Forest como XGBoost logran mejorar las métricas de desempeño respecto a la regresión logística, lo cual era esperable dado que:
+
+- Capturan **relaciones no lineales** entre las variables.
+- Modelan de manera más flexible interacciones entre features (por ejemplo, combinaciones de score, carga de deuda y edad).
+
+En el caso de Random Forest, la diferencia entre el desempeño en entrenamiento y prueba es mayor, lo que indica cierto **overfitting** inherente al modelo. XGBoost, por su parte, muestra un mejor balance entre ajuste y generalización, gracias a:
+
+- La regularización explícita en la función de pérdida.
+- El uso de un learning rate controlado.
+- La posibilidad de ajustar hiperparámetros finos (profundidad, min_child_weight, subsample, etc.).
+
+En resumen, mientras que Random Forest es un buen baseline no lineal relativamente fácil de configurar, XGBoost ofrece un mayor **potencial de performance** a cambio de mayor complejidad de tuning.
+Es interesante notar que, pese a las diferencias de arquitectura, los tres modelos coinciden en resaltar un conjunto relativamente reducido de variables como las más importantes:
+
+- `SCORE_PROMEDIO` y otras variables relacionadas con el **historial crediticio externo**.
+- Ratios que combinan deuda e ingreso (`CREDIT_INCOME_RATIO`, `RATIO_PAGO_CUOTA`).
+- Indicadores de comportamiento de pago (`PCT_MESES_MORA`, `CREDITOS_CON_IMPAGO`).
+
+Esta coincidencia refuerza la idea de que el riesgo de impago está fuertemente determinado por una combinación de **historial de cumplimiento** y **capacidad de pago actual**, en línea con la narrativa del grafo causal.
 
 # Comparación de Modelos
 
@@ -1341,14 +1649,14 @@ plt.tight_layout()
 plt.show()
 ```
 
-## Comparación de Importancia de Variables
+
 
 ```{python}
 #| echo: false
 #| label: fig-feature-importance-comparison
 #| fig-cap: "Comparación de importancia de variables entre modelos"
 
-# Normalizar importancias
+#Normalizar importancias
 imp_lr_norm = feature_importance_lr.set_index('Variable')['Importancia_Abs']
 imp_lr_norm = imp_lr_norm / imp_lr_norm.max()
 
@@ -1371,23 +1679,34 @@ imp_comparison = pd.DataFrame({
 x = np.arange(len(top_vars))
 width = 0.25
 
-fig, ax = plt.subplots(figsize=(14, 7))
+# fig, ax = plt.subplots(figsize=(14, 7))
 
-bars1 = ax.bar(x - width, imp_comparison['LogReg'], width, label='Regresión Logística', color='steelblue', alpha=0.8)
-bars2 = ax.bar(x, imp_comparison['RF'], width, label='Random Forest', color='forestgreen', alpha=0.8)
-bars3 = ax.bar(x + width, imp_comparison['XGBoost'], width, label='XGBoost', color='#E94F37', alpha=0.8)
+# bars1 = ax.bar(x - width, imp_comparison['LogReg'], width, label='Regresión Logística', color='steelblue', alpha=0.8)
+# bars2 = ax.bar(x, imp_comparison['RF'], width, label='Random Forest', color='forestgreen', alpha=0.8)
+# bars3 = ax.bar(x + width, imp_comparison['XGBoost'], width, label='XGBoost', color='#E94F37', alpha=0.8)
 
-ax.set_xlabel('Variable', fontsize=12)
-ax.set_ylabel('Importancia Relativa (normalizada)', fontsize=12)
-ax.set_title('Comparación de Importancia de Variables entre Modelos', fontsize=14, fontweight='bold')
-ax.set_xticks(x)
-ax.set_xticklabels(top_vars, rotation=45, ha='right')
-ax.legend()
-ax.grid(axis='y', alpha=0.3)
+# ax.set_xlabel('Variable', fontsize=12)
+# ax.set_ylabel('Importancia Relativa (normalizada)', fontsize=12)
+# ax.set_title('Comparación de Importancia de Variables entre Modelos', fontsize=14, fontweight='bold')
+# ax.set_xticks(x)
+# ax.set_xticklabels(top_vars, rotation=45, ha='right')
+# ax.legend()
+# ax.grid(axis='y', alpha=0.3)
 
-plt.tight_layout()
-plt.show()
+# plt.tight_layout()
+# plt.show()
 ```
+Desde una perspectiva práctica, la elección del modelo no debería basarse únicamente en el valor numérico de AUC o AP, sino también en:
+
+1. **Estabilidad temporal**: qué tan robusto es el modelo frente a cambios en la distribución de clientes y condiciones macroeconómicas.
+2. **Implementabilidad**: facilidad de desplegar el modelo en sistemas productivos, tiempos de scoring, dependencia de librerías, etc.
+3. **Gobernanza y explicabilidad**: requisitos regulatorios o internos que demanden cierta transparencia en la toma de decisiones.
+
+En ese sentido:
+
+- La **regresión logística** es atractiva para documentación, auditoría y explicación a no-técnicos.
+- **Random Forest** ofrece una mejora de desempeño, pero puede ser más difícil de explicar y controlar si se usan muchos árboles profundos.
+- **XGBoost** se perfila como el candidato más competitivo para producción, siempre que se acompañe de herramientas de explicabilidad que permitan entender contribuciones a nivel cliente.
 
 # Conclusiones
 
@@ -1424,14 +1743,6 @@ print(f"  • XGBoost: ROC-AUC = {test_auc_xgb:.4f}, Overfitting = {abs(train_au
 - **XGBoost**: Mejor rendimiento, pero menor interpretabilidad
 - **Random Forest**: Balance intermedio, pero con mayor overfitting
 
-## Ventajas y Desventajas de Cada Modelo
-
-| Modelo | Ventajas | Desventajas |
-|--------|----------|-------------|
-| Regresión Logística | Alta interpretabilidad, Sin overfitting, Rápido entrenamiento | Asume linealidad, Menor AUC |
-| Random Forest | Captura interacciones, Robusto a outliers | Alto overfitting, Caja negra |
-| XGBoost | Mejor AUC, Bajo overfitting | Caja negra, Requiere tuning |
-
 ## Recomendación Final
 
 ### Para Producción
@@ -1452,6 +1763,15 @@ Recomendamos implementar **XGBoost** como modelo principal por:
 | Mayor historial de mora → Mayor riesgo | ✓ Confirmada | PCT_MESES_MORA significativo |
 | Más créditos activos → Mayor riesgo | ✓ Confirmada | Coeficiente positivo en LR |
 
+## Limitaciones y Trabajo Futuro
+
+Aunque los resultados son prometedores, nuestro análisis presenta algunas limitaciones que abren la puerta a extensiones interesantes:
+
+- **Costos y beneficios explícitos**: no incorporamos un análisis formal de costos de FN/FP ni un modelo de utilidad esperada. Incluir una matriz de costos permitiría **optimizar directamente decisiones de originación** en lugar de solo métricas estadísticas.
+- **Drift y monitoreo**: en operación real, es fundamental establecer un esquema de monitoreo de **drift de datos y performance** para detectar deterioros en la capacidad predictiva del modelo.
+
+A pesar de estas limitaciones, el ejercicio demuestra cómo, a partir de un marco causal razonable y de un proceso de ingeniería de variables bien estructurado, es posible construir modelos de riesgo de crédito que sean simultáneamente **útiles para el negocio** y **rigorosos desde el punto de vista estadístico**.
+
 # Referencias
 
 1. Home Credit Group. (2018). *Home Credit Default Risk*. Kaggle Competition. https://www.kaggle.com/competitions/home-credit-default-risk
@@ -1464,5 +1784,5 @@ Recomendamos implementar **XGBoost** como modelo principal por:
 
 5. James, G., Witten, D., Hastie, T., & Tibshirani, R. (2021). *An Introduction to Statistical Learning* (2nd ed.). Springer.
 
-6. Battagliola, M. L. (2025). *Guía para la Elaboración del Proyecto Final*. ITAM - Estadística Aplicada III.
+6. Battagliola, M. L. (2025). *Notas Estadística Aplícada III*. ITAM - Estadística Aplicada III.
 

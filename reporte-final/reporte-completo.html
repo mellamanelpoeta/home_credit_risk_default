@@ -1,0 +1,2981 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.33">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Gerardo Guerrero">
+<meta name="author" content="Juan Pablo Cordero">
+<meta name="author" content="Jerónimo Deli">
+<meta name="author" content="Romain S">
+<meta name="dcterms.date" content="2025-01-01">
+
+<title>Predicción de Riesgo de Impago Crediticio</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script><script src="reporte-completo_files/libs/clipboard/clipboard.min.js"></script>
+<script src="reporte-completo_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="reporte-completo_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="reporte-completo_files/libs/quarto-html/popper.min.js"></script>
+<script src="reporte-completo_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="reporte-completo_files/libs/quarto-html/anchor.min.js"></script>
+<link href="reporte-completo_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="reporte-completo_files/libs/quarto-html/quarto-syntax-highlighting-ea385d0e468b0dd5ea5bf0780b1290d9.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="reporte-completo_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="reporte-completo_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="reporte-completo_files/libs/bootstrap/bootstrap-8a894fcc3cb5e37eb5bf30def131be2f.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" integrity="sha512-c3Nl8+7g4LMSTdrm621y7kf9v3SDPnhxLNhcjFJbKECVnmZHTdo+IRO05sNLTH/D3vA6u1X32ehoLC7WFVdheg==" crossorigin="anonymous"></script>
+
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#introducción" id="toc-introducción" class="nav-link active" data-scroll-target="#introducción"><span class="header-section-number">1</span> Introducción</a>
+  <ul class="collapse">
+  <li><a href="#contexto-del-problema" id="toc-contexto-del-problema" class="nav-link" data-scroll-target="#contexto-del-problema"><span class="header-section-number">1.1</span> Contexto del Problema</a></li>
+  <li><a href="#marco-conceptual-el-grafo-causal-del-impago" id="toc-marco-conceptual-el-grafo-causal-del-impago" class="nav-link" data-scroll-target="#marco-conceptual-el-grafo-causal-del-impago"><span class="header-section-number">1.2</span> Marco Conceptual: El Grafo Causal del Impago</a>
+  <ul class="collapse">
+  <li><a href="#modelo-causal-simplificado" id="toc-modelo-causal-simplificado" class="nav-link" data-scroll-target="#modelo-causal-simplificado"><span class="header-section-number">1.2.1</span> Modelo Causal Simplificado</a></li>
+  </ul></li>
+  <li><a href="#hipótesis-de-investigación" id="toc-hipótesis-de-investigación" class="nav-link" data-scroll-target="#hipótesis-de-investigación"><span class="header-section-number">1.3</span> Hipótesis de Investigación</a></li>
+  <li><a href="#preguntas-de-investigación" id="toc-preguntas-de-investigación" class="nav-link" data-scroll-target="#preguntas-de-investigación"><span class="header-section-number">1.4</span> Preguntas de Investigación</a></li>
+  </ul></li>
+  <li><a href="#variables-disponibles" id="toc-variables-disponibles" class="nav-link" data-scroll-target="#variables-disponibles"><span class="header-section-number">2</span> Variables Disponibles</a>
+  <ul class="collapse">
+  <li><a href="#descripción-del-dataset" id="toc-descripción-del-dataset" class="nav-link" data-scroll-target="#descripción-del-dataset"><span class="header-section-number">2.1</span> Descripción del Dataset</a></li>
+  <li><a href="#variables-originales-de-application-train" id="toc-variables-originales-de-application-train" class="nav-link" data-scroll-target="#variables-originales-de-application-train"><span class="header-section-number">2.2</span> Variables Originales de Application Train</a>
+  <ul class="collapse">
+  <li><a href="#variables-demográficas" id="toc-variables-demográficas" class="nav-link" data-scroll-target="#variables-demográficas"><span class="header-section-number">2.2.1</span> Variables Demográficas</a></li>
+  <li><a href="#variables-financieras" id="toc-variables-financieras" class="nav-link" data-scroll-target="#variables-financieras"><span class="header-section-number">2.2.2</span> Variables Financieras</a></li>
+  <li><a href="#scores-de-riesgo-externos" id="toc-scores-de-riesgo-externos" class="nav-link" data-scroll-target="#scores-de-riesgo-externos"><span class="header-section-number">2.2.3</span> Scores de Riesgo Externos</a></li>
+  <li><a href="#variables-de-activos" id="toc-variables-de-activos" class="nav-link" data-scroll-target="#variables-de-activos"><span class="header-section-number">2.2.4</span> Variables de Activos</a></li>
+  <li><a href="#variables-de-contacto-y-documentación" id="toc-variables-de-contacto-y-documentación" class="nav-link" data-scroll-target="#variables-de-contacto-y-documentación"><span class="header-section-number">2.2.5</span> Variables de Contacto y Documentación</a></li>
+  <li><a href="#variables-de-vivienda" id="toc-variables-de-vivienda" class="nav-link" data-scroll-target="#variables-de-vivienda"><span class="header-section-number">2.2.6</span> Variables de Vivienda</a></li>
+  <li><a href="#consultas-al-buró" id="toc-consultas-al-buró" class="nav-link" data-scroll-target="#consultas-al-buró"><span class="header-section-number">2.2.7</span> Consultas al Buró</a></li>
+  </ul></li>
+  <li><a href="#distribución-de-la-variable-objetivo" id="toc-distribución-de-la-variable-objetivo" class="nav-link" data-scroll-target="#distribución-de-la-variable-objetivo"><span class="header-section-number">2.3</span> Distribución de la Variable Objetivo</a></li>
+  </ul></li>
+  <li><a href="#variables-seleccionadas-y-construidas" id="toc-variables-seleccionadas-y-construidas" class="nav-link" data-scroll-target="#variables-seleccionadas-y-construidas"><span class="header-section-number">3</span> Variables Seleccionadas y Construidas</a>
+  <ul class="collapse">
+  <li><a href="#ingeniería-de-variables" id="toc-ingeniería-de-variables" class="nav-link" data-scroll-target="#ingeniería-de-variables"><span class="header-section-number">3.1</span> Ingeniería de Variables</a>
+  <ul class="collapse">
+  <li><a href="#variables-demográficas-y-socioeconómicas" id="toc-variables-demográficas-y-socioeconómicas" class="nav-link" data-scroll-target="#variables-demográficas-y-socioeconómicas"><span class="header-section-number">3.1.1</span> Variables Demográficas y Socioeconómicas</a></li>
+  <li><a href="#variables-financieras-1" id="toc-variables-financieras-1" class="nav-link" data-scroll-target="#variables-financieras-1"><span class="header-section-number">3.1.2</span> Variables Financieras</a></li>
+  <li><a href="#scores-de-riesgo-externos-1" id="toc-scores-de-riesgo-externos-1" class="nav-link" data-scroll-target="#scores-de-riesgo-externos-1"><span class="header-section-number">3.1.3</span> Scores de Riesgo Externos</a></li>
+  <li><a href="#historial-crediticio-desde-bureau" id="toc-historial-crediticio-desde-bureau" class="nav-link" data-scroll-target="#historial-crediticio-desde-bureau"><span class="header-section-number">3.1.4</span> Historial Crediticio (desde Bureau)</a></li>
+  <li><a href="#variables-de-préstamos-previos" id="toc-variables-de-préstamos-previos" class="nav-link" data-scroll-target="#variables-de-préstamos-previos"><span class="header-section-number">3.1.5</span> Variables de Préstamos Previos</a></li>
+  <li><a href="#variables-de-comportamiento-de-pago" id="toc-variables-de-comportamiento-de-pago" class="nav-link" data-scroll-target="#variables-de-comportamiento-de-pago"><span class="header-section-number">3.1.6</span> Variables de Comportamiento de Pago</a></li>
+  <li><a href="#variables-de-activos-1" id="toc-variables-de-activos-1" class="nav-link" data-scroll-target="#variables-de-activos-1"><span class="header-section-number">3.1.7</span> Variables de Activos</a></li>
+  </ul></li>
+  <li><a href="#código-de-generación-de-variables" id="toc-código-de-generación-de-variables" class="nav-link" data-scroll-target="#código-de-generación-de-variables"><span class="header-section-number">3.2</span> Código de Generación de Variables</a></li>
+  <li><a href="#grafo-causal-del-impago" id="toc-grafo-causal-del-impago" class="nav-link" data-scroll-target="#grafo-causal-del-impago"><span class="header-section-number">3.3</span> Grafo Causal del Impago</a></li>
+  </ul></li>
+  <li><a href="#subset-final-de-variables-utilizadas" id="toc-subset-final-de-variables-utilizadas" class="nav-link" data-scroll-target="#subset-final-de-variables-utilizadas"><span class="header-section-number">4</span> Subset Final de Variables Utilizadas</a>
+  <ul class="collapse">
+  <li><a href="#variables-seleccionadas-para-el-modelado" id="toc-variables-seleccionadas-para-el-modelado" class="nav-link" data-scroll-target="#variables-seleccionadas-para-el-modelado"><span class="header-section-number">4.1</span> Variables Seleccionadas para el Modelado</a></li>
+  <li><a href="#análisis-de-correlaciones" id="toc-análisis-de-correlaciones" class="nav-link" data-scroll-target="#análisis-de-correlaciones"><span class="header-section-number">4.2</span> Análisis de Correlaciones</a>
+  <ul class="collapse">
+  <li><a href="#correlación-con-la-variable-objetivo" id="toc-correlación-con-la-variable-objetivo" class="nav-link" data-scroll-target="#correlación-con-la-variable-objetivo"><span class="header-section-number">4.2.1</span> Correlación con la Variable Objetivo</a></li>
+  <li><a href="#matriz-de-correlación-heatmap" id="toc-matriz-de-correlación-heatmap" class="nav-link" data-scroll-target="#matriz-de-correlación-heatmap"><span class="header-section-number">4.2.2</span> Matriz de Correlación (Heatmap)</a></li>
+  <li><a href="#comparación-de-perfiles-default-vs.-no-default" id="toc-comparación-de-perfiles-default-vs.-no-default" class="nav-link" data-scroll-target="#comparación-de-perfiles-default-vs.-no-default"><span class="header-section-number">4.2.3</span> Comparación de Perfiles: Default vs.&nbsp;No Default</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#variables-descartadas" id="toc-variables-descartadas" class="nav-link" data-scroll-target="#variables-descartadas"><span class="header-section-number">5</span> Variables Descartadas</a>
+  <ul class="collapse">
+  <li><a href="#lista-de-variables-eliminadas" id="toc-lista-de-variables-eliminadas" class="nav-link" data-scroll-target="#lista-de-variables-eliminadas"><span class="header-section-number">5.1</span> Lista de Variables Eliminadas</a></li>
+  <li><a href="#código-de-eliminación-de-variables" id="toc-código-de-eliminación-de-variables" class="nav-link" data-scroll-target="#código-de-eliminación-de-variables"><span class="header-section-number">5.2</span> Código de Eliminación de Variables</a></li>
+  <li><a href="#justificación-de-la-reducción" id="toc-justificación-de-la-reducción" class="nav-link" data-scroll-target="#justificación-de-la-reducción"><span class="header-section-number">5.3</span> Justificación de la Reducción</a></li>
+  </ul></li>
+  <li><a href="#regresión-logística" id="toc-regresión-logística" class="nav-link" data-scroll-target="#regresión-logística"><span class="header-section-number">6</span> Regresión Logística</a>
+  <ul class="collapse">
+  <li><a href="#teoría" id="toc-teoría" class="nav-link" data-scroll-target="#teoría"><span class="header-section-number">6.1</span> Teoría</a>
+  <ul class="collapse">
+  <li><a href="#función-sigmoide" id="toc-función-sigmoide" class="nav-link" data-scroll-target="#función-sigmoide"><span class="header-section-number">6.1.1</span> Función Sigmoide</a></li>
+  <li><a href="#interpretación-de-coeficientes" id="toc-interpretación-de-coeficientes" class="nav-link" data-scroll-target="#interpretación-de-coeficientes"><span class="header-section-number">6.1.2</span> Interpretación de Coeficientes</a></li>
+  <li><a href="#función-de-pérdida-log-loss-entropía-cruzada-binaria" id="toc-función-de-pérdida-log-loss-entropía-cruzada-binaria" class="nav-link" data-scroll-target="#función-de-pérdida-log-loss-entropía-cruzada-binaria"><span class="header-section-number">6.1.3</span> Función de Pérdida: Log-Loss (Entropía Cruzada Binaria)</a></li>
+  </ul></li>
+  <li><a href="#parámetros-y-entrenamiento" id="toc-parámetros-y-entrenamiento" class="nav-link" data-scroll-target="#parámetros-y-entrenamiento"><span class="header-section-number">6.2</span> Parámetros y Entrenamiento</a>
+  <ul class="collapse">
+  <li><a href="#regularización" id="toc-regularización" class="nav-link" data-scroll-target="#regularización"><span class="header-section-number">6.2.1</span> Regularización</a></li>
+  <li><a href="#configuración-del-modelo" id="toc-configuración-del-modelo" class="nav-link" data-scroll-target="#configuración-del-modelo"><span class="header-section-number">6.2.2</span> Configuración del Modelo</a></li>
+  <li><a href="#validación-cruzada" id="toc-validación-cruzada" class="nav-link" data-scroll-target="#validación-cruzada"><span class="header-section-number">6.2.3</span> Validación Cruzada</a></li>
+  </ul></li>
+  <li><a href="#resultados-del-modelo" id="toc-resultados-del-modelo" class="nav-link" data-scroll-target="#resultados-del-modelo"><span class="header-section-number">6.3</span> Resultados del Modelo</a>
+  <ul class="collapse">
+  <li><a href="#matriz-de-confusión" id="toc-matriz-de-confusión" class="nav-link" data-scroll-target="#matriz-de-confusión"><span class="header-section-number">6.3.1</span> Matriz de Confusión</a></li>
+  <li><a href="#importancia-de-variables" id="toc-importancia-de-variables" class="nav-link" data-scroll-target="#importancia-de-variables"><span class="header-section-number">6.3.2</span> Importancia de Variables</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#random-forest" id="toc-random-forest" class="nav-link" data-scroll-target="#random-forest"><span class="header-section-number">7</span> Random Forest</a>
+  <ul class="collapse">
+  <li><a href="#descripción-del-modelo" id="toc-descripción-del-modelo" class="nav-link" data-scroll-target="#descripción-del-modelo"><span class="header-section-number">7.1</span> Descripción del Modelo</a>
+  <ul class="collapse">
+  <li><a href="#importancia-de-variables-gini-importance" id="toc-importancia-de-variables-gini-importance" class="nav-link" data-scroll-target="#importancia-de-variables-gini-importance"><span class="header-section-number">7.1.1</span> Importancia de Variables (Gini Importance)</a></li>
+  </ul></li>
+  <li><a href="#hiperparámetros" id="toc-hiperparámetros" class="nav-link" data-scroll-target="#hiperparámetros"><span class="header-section-number">7.2</span> Hiperparámetros</a></li>
+  <li><a href="#resultados" id="toc-resultados" class="nav-link" data-scroll-target="#resultados"><span class="header-section-number">7.3</span> Resultados</a>
+  <ul class="collapse">
+  <li><a href="#importancia-de-variables-1" id="toc-importancia-de-variables-1" class="nav-link" data-scroll-target="#importancia-de-variables-1"><span class="header-section-number">7.3.1</span> Importancia de Variables</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#xgboost" id="toc-xgboost" class="nav-link" data-scroll-target="#xgboost"><span class="header-section-number">8</span> XGBoost</a>
+  <ul class="collapse">
+  <li><a href="#descripción-del-modelo-1" id="toc-descripción-del-modelo-1" class="nav-link" data-scroll-target="#descripción-del-modelo-1"><span class="header-section-number">8.1</span> Descripción del Modelo</a>
+  <ul class="collapse">
+  <li><a href="#mecanismo-de-boosting" id="toc-mecanismo-de-boosting" class="nav-link" data-scroll-target="#mecanismo-de-boosting"><span class="header-section-number">8.1.1</span> Mecanismo de Boosting</a></li>
+  <li><a href="#learning-rate-η" id="toc-learning-rate-η" class="nav-link" data-scroll-target="#learning-rate-η"><span class="header-section-number">8.1.2</span> Learning Rate (η)</a></li>
+  </ul></li>
+  <li><a href="#hiperparámetros-1" id="toc-hiperparámetros-1" class="nav-link" data-scroll-target="#hiperparámetros-1"><span class="header-section-number">8.2</span> Hiperparámetros</a></li>
+  <li><a href="#resultados-1" id="toc-resultados-1" class="nav-link" data-scroll-target="#resultados-1"><span class="header-section-number">8.3</span> Resultados</a>
+  <ul class="collapse">
+  <li><a href="#importancia-de-variables-2" id="toc-importancia-de-variables-2" class="nav-link" data-scroll-target="#importancia-de-variables-2"><span class="header-section-number">8.3.1</span> Importancia de Variables</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#comparación-de-modelos" id="toc-comparación-de-modelos" class="nav-link" data-scroll-target="#comparación-de-modelos"><span class="header-section-number">9</span> Comparación de Modelos</a>
+  <ul class="collapse">
+  <li><a href="#métricas-globales" id="toc-métricas-globales" class="nav-link" data-scroll-target="#métricas-globales"><span class="header-section-number">9.1</span> Métricas Globales</a></li>
+  <li><a href="#curvas-roc" id="toc-curvas-roc" class="nav-link" data-scroll-target="#curvas-roc"><span class="header-section-number">9.2</span> Curvas ROC</a></li>
+  <li><a href="#comparación-de-feature-importance" id="toc-comparación-de-feature-importance" class="nav-link" data-scroll-target="#comparación-de-feature-importance"><span class="header-section-number">9.3</span> Comparación de Feature Importance</a></li>
+  <li><a href="#matrices-de-confusión" id="toc-matrices-de-confusión" class="nav-link" data-scroll-target="#matrices-de-confusión"><span class="header-section-number">9.4</span> Matrices de Confusión</a></li>
+  </ul></li>
+  <li><a href="#conclusión-general" id="toc-conclusión-general" class="nav-link" data-scroll-target="#conclusión-general"><span class="header-section-number">10</span> Conclusión General</a>
+  <ul class="collapse">
+  <li><a href="#hallazgos-principales" id="toc-hallazgos-principales" class="nav-link" data-scroll-target="#hallazgos-principales"><span class="header-section-number">10.1</span> Hallazgos Principales</a>
+  <ul class="collapse">
+  <li><a href="#el-score-crediticio-es-el-predictor-dominante" id="toc-el-score-crediticio-es-el-predictor-dominante" class="nav-link" data-scroll-target="#el-score-crediticio-es-el-predictor-dominante"><span class="header-section-number">10.1.1</span> 1. El Score Crediticio es el Predictor Dominante</a></li>
+  <li><a href="#xgboost-ofrece-el-mejor-rendimiento" id="toc-xgboost-ofrece-el-mejor-rendimiento" class="nav-link" data-scroll-target="#xgboost-ofrece-el-mejor-rendimiento"><span class="header-section-number">10.1.2</span> 2. XGBoost Ofrece el Mejor Rendimiento</a></li>
+  <li><a href="#trade-off-entre-interpretabilidad-y-rendimiento" id="toc-trade-off-entre-interpretabilidad-y-rendimiento" class="nav-link" data-scroll-target="#trade-off-entre-interpretabilidad-y-rendimiento"><span class="header-section-number">10.1.3</span> 3. Trade-off entre Interpretabilidad y Rendimiento</a></li>
+  </ul></li>
+  <li><a href="#ventajas-y-desventajas-de-cada-modelo" id="toc-ventajas-y-desventajas-de-cada-modelo" class="nav-link" data-scroll-target="#ventajas-y-desventajas-de-cada-modelo"><span class="header-section-number">10.2</span> Ventajas y Desventajas de Cada Modelo</a></li>
+  <li><a href="#recomendación-final" id="toc-recomendación-final" class="nav-link" data-scroll-target="#recomendación-final"><span class="header-section-number">10.3</span> Recomendación Final</a>
+  <ul class="collapse">
+  <li><a href="#para-producción" id="toc-para-producción" class="nav-link" data-scroll-target="#para-producción"><span class="header-section-number">10.3.1</span> Para Producción</a></li>
+  <li><a href="#para-monitoreo" id="toc-para-monitoreo" class="nav-link" data-scroll-target="#para-monitoreo"><span class="header-section-number">10.3.2</span> Para Monitoreo</a></li>
+  <li><a href="#para-mejora-futura" id="toc-para-mejora-futura" class="nav-link" data-scroll-target="#para-mejora-futura"><span class="header-section-number">10.3.3</span> Para Mejora Futura</a></li>
+  </ul></li>
+  <li><a href="#validación-de-hipótesis" id="toc-validación-de-hipótesis" class="nav-link" data-scroll-target="#validación-de-hipótesis"><span class="header-section-number">10.4</span> Validación de Hipótesis</a></li>
+  </ul></li>
+  <li><a href="#referencias" id="toc-referencias" class="nav-link" data-scroll-target="#referencias"><span class="header-section-number">11</span> Referencias</a></li>
+  <li><a href="#anexos" id="toc-anexos" class="nav-link" data-scroll-target="#anexos"><span class="header-section-number">12</span> Anexos</a>
+  <ul class="collapse">
+  <li><a href="#a.-diccionario-de-variables" id="toc-a.-diccionario-de-variables" class="nav-link" data-scroll-target="#a.-diccionario-de-variables"><span class="header-section-number">12.1</span> A. Diccionario de Variables</a></li>
+  <li><a href="#b.-código-fuente" id="toc-b.-código-fuente" class="nav-link" data-scroll-target="#b.-código-fuente"><span class="header-section-number">12.2</span> B. Código Fuente</a></li>
+  </ul></li>
+  </ul>
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="reporte-completo.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Predicción de Riesgo de Impago Crediticio</h1>
+<p class="subtitle lead">Home Credit Default Risk - Un Enfoque Multivariado</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Authors</div>
+    <div class="quarto-title-meta-contents">
+             <p>Gerardo Guerrero </p>
+             <p>Juan Pablo Cordero </p>
+             <p>Jerónimo Deli </p>
+             <p>Romain S </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">January 1, 2025</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="introducción" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Introducción</h1>
+<section id="contexto-del-problema" class="level2" data-number="1.1">
+<h2 data-number="1.1" class="anchored" data-anchor-id="contexto-del-problema"><span class="header-section-number">1.1</span> Contexto del Problema</h2>
+<p>El acceso al crédito es un pilar fundamental para el desarrollo económico individual y colectivo. Sin embargo, las instituciones financieras enfrentan el desafío constante de evaluar el <strong>riesgo de incumplimiento</strong> (<em>default</em>) de sus clientes. Una evaluación inadecuada puede resultar en pérdidas significativas para la institución o, por otro lado, en la exclusión financiera de personas que podrían cumplir con sus obligaciones.</p>
+<p><strong>Home Credit Group</strong> es una compañía de servicios financieros enfocada en préstamos a poblaciones no bancarizadas o con historial crediticio limitado. El problema que abordamos es la <strong>predicción del riesgo de impago</strong> utilizando técnicas estadísticas multivariadas, con el objetivo de:</p>
+<ol type="1">
+<li><strong>Identificar clientes con alta probabilidad de incumplimiento</strong> antes de otorgar el crédito</li>
+<li><strong>Comprender los factores que influyen en el impago</strong> para diseñar políticas de mitigación</li>
+<li><strong>Equilibrar la inclusión financiera con la gestión del riesgo</strong></li>
+</ol>
+</section>
+<section id="marco-conceptual-el-grafo-causal-del-impago" class="level2" data-number="1.2">
+<h2 data-number="1.2" class="anchored" data-anchor-id="marco-conceptual-el-grafo-causal-del-impago"><span class="header-section-number">1.2</span> Marco Conceptual: El Grafo Causal del Impago</h2>
+<p>Antes de desarrollar nuestros modelos predictivos, construimos un <strong>grafo causal</strong> que representa nuestra comprensión teórica del fenómeno. Este ejercicio de pensamiento causal nos permite identificar las variables relevantes y sus relaciones, fundamentando así nuestro enfoque analítico.</p>
+<section id="modelo-causal-simplificado" class="level3" data-number="1.2.1">
+<h3 data-number="1.2.1" class="anchored" data-anchor-id="modelo-causal-simplificado"><span class="header-section-number">1.2.1</span> Modelo Causal Simplificado</h3>
+<p>El impago crediticio puede originarse por dos vías principales:</p>
+<ul>
+<li><strong>Fraude</strong>: Cuando el cliente nunca tuvo intención de pagar</li>
+<li><strong>Capacidad de Pago</strong>: Cuando el cliente no puede cumplir con sus obligaciones debido a restricciones económicas</li>
+</ul>
+<p>El grafo causal detallado nos muestra las relaciones entre las distintas variables que capturamos en los datos y cómo estas se relacionan con los dos mecanismos principales de impago.</p>
+</section>
+</section>
+<section id="hipótesis-de-investigación" class="level2" data-number="1.3">
+<h2 data-number="1.3" class="anchored" data-anchor-id="hipótesis-de-investigación"><span class="header-section-number">1.3</span> Hipótesis de Investigación</h2>
+<p>Con base en el marco causal, formulamos las siguientes hipótesis que guiarán nuestro análisis:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 23%">
+<col style="width: 34%">
+<col style="width: 41%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Hipótesis</th>
+<th>Variable Proxy</th>
+<th>Relación Esperada</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Préstamos más altos incrementan la probabilidad de impago</td>
+<td><code>AMT_CREDIT</code></td>
+<td>Positiva</td>
+</tr>
+<tr class="even">
+<td>Menor edad y sin historial crediticio aumenta el riesgo</td>
+<td><code>EDAD_ANOS</code>, <code>ES_PRIMER_CREDITO</code></td>
+<td>Negativa, Positiva</td>
+</tr>
+<tr class="odd">
+<td>Mal historial crediticio incrementa el riesgo</td>
+<td><code>EXT_SOURCE_1/2/3</code>, <code>SCORE_PROMEDIO</code></td>
+<td>Negativa</td>
+</tr>
+<tr class="even">
+<td>Menor ingreso incrementa el riesgo</td>
+<td><code>AMT_INCOME_TOTAL</code>, <code>INGRESO_PER_CAPITA</code></td>
+<td>Negativa</td>
+</tr>
+<tr class="odd">
+<td>Mayor carga de gastos incrementa el riesgo</td>
+<td><code>CNT_CHILDREN</code>, <code>CNT_FAM_MEMBERS</code></td>
+<td>Positiva</td>
+</tr>
+<tr class="even">
+<td>Mayor deuda acumulada incrementa el riesgo</td>
+<td><code>TOTAL_DEUDA_ACTUAL</code>, <code>CREDITOS_ACTIVOS</code></td>
+<td>Positiva</td>
+</tr>
+<tr class="odd">
+<td>Menos activos incrementan el riesgo</td>
+<td><code>NUM_ACTIVOS</code>, <code>FLAG_OWN_CAR</code>, <code>FLAG_OWN_REALTY</code></td>
+<td>Negativa</td>
+</tr>
+<tr class="even">
+<td>Condiciones crediticias adversas aumentan el riesgo</td>
+<td><code>TASA_INTERES_PROMEDIO</code>, <code>PLAZO_PROMEDIO</code></td>
+<td>Positiva</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="preguntas-de-investigación" class="level2" data-number="1.4">
+<h2 data-number="1.4" class="anchored" data-anchor-id="preguntas-de-investigación"><span class="header-section-number">1.4</span> Preguntas de Investigación</h2>
+<ol type="1">
+<li>¿Cuáles son las variables con mayor poder predictivo para identificar clientes en riesgo de impago?</li>
+<li>¿Qué modelo (Regresión Logística, Random Forest o XGBoost) ofrece el mejor balance entre interpretabilidad y poder predictivo?</li>
+<li>¿Podemos reducir la dimensionalidad del problema sin perder capacidad predictiva?</li>
+</ol>
+</section>
+</section>
+<section id="variables-disponibles" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> Variables Disponibles</h1>
+<section id="descripción-del-dataset" class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="descripción-del-dataset"><span class="header-section-number">2.1</span> Descripción del Dataset</h2>
+<p>El conjunto de datos proviene de la competencia <a href="https://www.kaggle.com/competitions/home-credit-default-risk">Home Credit Default Risk</a> de Kaggle. La estructura de datos incluye múltiples tablas relacionadas:</p>
+<div class="cell" data-execution_count="2">
+<div id="tbl-datasets" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="2">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-datasets-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;1: Estructura del dataset Home Credit Default Risk
+</figcaption>
+<div aria-describedby="tbl-datasets-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display">
+<style type="text/css">
+</style>
+
+<table id="T_c62e8" class="do-not-create-environment cell caption-top table table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th id="T_c62e8_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">Tabla</th>
+<th id="T_c62e8_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">Descripción</th>
+<th id="T_c62e8_level0_col2" class="col_heading level0 col2" data-quarto-table-cell-role="th">Registros</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td id="T_c62e8_row0_col0" class="data row0 col0">application_train.csv</td>
+<td id="T_c62e8_row0_col1" class="data row0 col1">Información principal de las solicitudes</td>
+<td id="T_c62e8_row0_col2" class="data row0 col2">307,511</td>
+</tr>
+<tr class="even">
+<td id="T_c62e8_row1_col0" class="data row1 col0">bureau.csv</td>
+<td id="T_c62e8_row1_col1" class="data row1 col1">Historial crediticio de otras instituciones</td>
+<td id="T_c62e8_row1_col2" class="data row1 col2">1,716,428</td>
+</tr>
+<tr class="odd">
+<td id="T_c62e8_row2_col0" class="data row2 col0">bureau_balance.csv</td>
+<td id="T_c62e8_row2_col1" class="data row2 col1">Balance mensual de créditos en buró</td>
+<td id="T_c62e8_row2_col2" class="data row2 col2">27,299,925</td>
+</tr>
+<tr class="even">
+<td id="T_c62e8_row3_col0" class="data row3 col0">previous_application.csv</td>
+<td id="T_c62e8_row3_col1" class="data row3 col1">Solicitudes previas en Home Credit</td>
+<td id="T_c62e8_row3_col2" class="data row3 col2">1,670,214</td>
+</tr>
+<tr class="odd">
+<td id="T_c62e8_row4_col0" class="data row4 col0">installments_payments.csv</td>
+<td id="T_c62e8_row4_col1" class="data row4 col1">Historial de pagos</td>
+<td id="T_c62e8_row4_col2" class="data row4 col2">13,605,401</td>
+</tr>
+<tr class="even">
+<td id="T_c62e8_row5_col0" class="data row5 col0">credit_card_balance.csv</td>
+<td id="T_c62e8_row5_col1" class="data row5 col1">Balance de tarjetas de crédito</td>
+<td id="T_c62e8_row5_col2" class="data row5 col2">3,840,312</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+</section>
+<section id="variables-originales-de-application-train" class="level2" data-number="2.2">
+<h2 data-number="2.2" class="anchored" data-anchor-id="variables-originales-de-application-train"><span class="header-section-number">2.2</span> Variables Originales de Application Train</h2>
+<p>La tabla principal <code>application_train.csv</code> contiene 122 variables que se pueden agrupar en las siguientes categorías:</p>
+<section id="variables-demográficas" class="level3" data-number="2.2.1">
+<h3 data-number="2.2.1" class="anchored" data-anchor-id="variables-demográficas"><span class="header-section-number">2.2.1</span> Variables Demográficas</h3>
+<ul>
+<li><code>CODE_GENDER</code>: Género del solicitante</li>
+<li><code>DAYS_BIRTH</code>: Edad en días (negativo)</li>
+<li><code>NAME_FAMILY_STATUS</code>: Estado civil</li>
+<li><code>CNT_CHILDREN</code>: Número de hijos</li>
+<li><code>CNT_FAM_MEMBERS</code>: Número de miembros en la familia</li>
+<li><code>NAME_EDUCATION_TYPE</code>: Nivel educativo</li>
+<li><code>NAME_INCOME_TYPE</code>: Tipo de ingreso</li>
+</ul>
+</section>
+<section id="variables-financieras" class="level3" data-number="2.2.2">
+<h3 data-number="2.2.2" class="anchored" data-anchor-id="variables-financieras"><span class="header-section-number">2.2.2</span> Variables Financieras</h3>
+<ul>
+<li><code>AMT_INCOME_TOTAL</code>: Ingreso total del solicitante</li>
+<li><code>AMT_CREDIT</code>: Monto del crédito solicitado</li>
+<li><code>AMT_ANNUITY</code>: Anualidad del préstamo</li>
+<li><code>AMT_GOODS_PRICE</code>: Precio del bien a comprar</li>
+</ul>
+</section>
+<section id="scores-de-riesgo-externos" class="level3" data-number="2.2.3">
+<h3 data-number="2.2.3" class="anchored" data-anchor-id="scores-de-riesgo-externos"><span class="header-section-number">2.2.3</span> Scores de Riesgo Externos</h3>
+<ul>
+<li><code>EXT_SOURCE_1</code>: Score externo fuente 1</li>
+<li><code>EXT_SOURCE_2</code>: Score externo fuente 2</li>
+<li><code>EXT_SOURCE_3</code>: Score externo fuente 3</li>
+</ul>
+</section>
+<section id="variables-de-activos" class="level3" data-number="2.2.4">
+<h3 data-number="2.2.4" class="anchored" data-anchor-id="variables-de-activos"><span class="header-section-number">2.2.4</span> Variables de Activos</h3>
+<ul>
+<li><code>FLAG_OWN_CAR</code>: Si posee automóvil</li>
+<li><code>FLAG_OWN_REALTY</code>: Si posee propiedad inmobiliaria</li>
+<li><code>OWN_CAR_AGE</code>: Edad del automóvil</li>
+</ul>
+</section>
+<section id="variables-de-contacto-y-documentación" class="level3" data-number="2.2.5">
+<h3 data-number="2.2.5" class="anchored" data-anchor-id="variables-de-contacto-y-documentación"><span class="header-section-number">2.2.5</span> Variables de Contacto y Documentación</h3>
+<ul>
+<li><code>FLAG_MOBIL</code>: Si tiene teléfono móvil</li>
+<li><code>FLAG_EMAIL</code>: Si tiene correo electrónico</li>
+<li><code>FLAG_DOCUMENT_*</code>: Serie de flags para documentos proporcionados</li>
+</ul>
+</section>
+<section id="variables-de-vivienda" class="level3" data-number="2.2.6">
+<h3 data-number="2.2.6" class="anchored" data-anchor-id="variables-de-vivienda"><span class="header-section-number">2.2.6</span> Variables de Vivienda</h3>
+<ul>
+<li><code>NAME_HOUSING_TYPE</code>: Tipo de vivienda</li>
+<li><code>REGION_POPULATION_RELATIVE</code>: Población relativa de la región</li>
+<li><code>REGION_RATING_CLIENT</code>: Rating de la región del cliente</li>
+</ul>
+</section>
+<section id="consultas-al-buró" class="level3" data-number="2.2.7">
+<h3 data-number="2.2.7" class="anchored" data-anchor-id="consultas-al-buró"><span class="header-section-number">2.2.7</span> Consultas al Buró</h3>
+<ul>
+<li><code>AMT_REQ_CREDIT_BUREAU_HOUR/DAY/WEEK/MON/QRT/YEAR</code>: Consultas al buró en diferentes periodos</li>
+</ul>
+<div class="cell" data-execution_count="3">
+<div id="tbl-resumen-datos" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="3">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-resumen-datos-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;2: Resumen del dataset
+</figcaption>
+<div aria-describedby="tbl-resumen-datos-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display">
+<style type="text/css">
+</style>
+
+<table id="T_aa6bb" class="do-not-create-environment cell caption-top table table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th id="T_aa6bb_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">Característica</th>
+<th id="T_aa6bb_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">Valor</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td id="T_aa6bb_row0_col0" class="data row0 col0">Total de usuarios</td>
+<td id="T_aa6bb_row0_col1" class="data row0 col1">307,511</td>
+</tr>
+<tr class="even">
+<td id="T_aa6bb_row1_col0" class="data row1 col0">Variables originales</td>
+<td id="T_aa6bb_row1_col1" class="data row1 col1">122+</td>
+</tr>
+<tr class="odd">
+<td id="T_aa6bb_row2_col0" class="data row2 col0">Variables seleccionadas</td>
+<td id="T_aa6bb_row2_col1" class="data row2 col1">24-39</td>
+</tr>
+<tr class="even">
+<td id="T_aa6bb_row3_col0" class="data row3 col0">Tasa de Default</td>
+<td id="T_aa6bb_row3_col1" class="data row3 col1">8.07%</td>
+</tr>
+<tr class="odd">
+<td id="T_aa6bb_row4_col0" class="data row4 col0">División Train/Test</td>
+<td id="T_aa6bb_row4_col1" class="data row4 col1">80% / 20%</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+</section>
+</section>
+<section id="distribución-de-la-variable-objetivo" class="level2" data-number="2.3">
+<h2 data-number="2.3" class="anchored" data-anchor-id="distribución-de-la-variable-objetivo"><span class="header-section-number">2.3</span> Distribución de la Variable Objetivo</h2>
+<div id="cell-fig-target-dist" class="cell" data-execution_count="4">
+<div class="cell-output cell-output-display">
+<div id="fig-target-dist" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-target-dist-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="reporte-completo_files/figure-html/fig-target-dist-output-1.png" width="948" height="565" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-target-dist-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Distribución de la variable TARGET (desbalance de clases)
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>El dataset presenta un <strong>desbalance significativo</strong> con solo el 8.07% de casos positivos (default). Este desbalance tiene implicaciones importantes:</p>
+<ol type="1">
+<li>Métricas como <em>accuracy</em> son engañosas (un modelo que predice siempre “no default” tendría 92% de accuracy)</li>
+<li>Debemos usar técnicas como <code>class_weight='balanced'</code> o <code>scale_pos_weight</code> en los modelos</li>
+<li>Las métricas PR-AUC y Recall son más informativas que ROC-AUC</li>
+</ol>
+</section>
+</section>
+<section id="variables-seleccionadas-y-construidas" class="level1" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> Variables Seleccionadas y Construidas</h1>
+<section id="ingeniería-de-variables" class="level2" data-number="3.1">
+<h2 data-number="3.1" class="anchored" data-anchor-id="ingeniería-de-variables"><span class="header-section-number">3.1</span> Ingeniería de Variables</h2>
+<p>A partir de las tablas relacionadas, construimos 41 variables que capturan diferentes dimensiones del riesgo crediticio:</p>
+<section id="variables-demográficas-y-socioeconómicas" class="level3" data-number="3.1.1">
+<h3 data-number="3.1.1" class="anchored" data-anchor-id="variables-demográficas-y-socioeconómicas"><span class="header-section-number">3.1.1</span> Variables Demográficas y Socioeconómicas</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 32%">
+<col style="width: 41%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Descripción</th>
+<th>Origen</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>EDAD_ANOS</code></td>
+<td>Edad del solicitante en años</td>
+<td>Derivada de <code>DAYS_BIRTH</code></td>
+</tr>
+<tr class="even">
+<td><code>CNT_CHILDREN</code></td>
+<td>Número de hijos</td>
+<td>Original</td>
+</tr>
+<tr class="odd">
+<td><code>CODE_GENDER</code></td>
+<td>Género</td>
+<td>Original</td>
+</tr>
+<tr class="even">
+<td><code>NAME_FAMILY_STATUS</code></td>
+<td>Estado civil</td>
+<td>Original</td>
+</tr>
+<tr class="odd">
+<td><code>NAME_EDUCATION_TYPE</code></td>
+<td>Nivel educativo</td>
+<td>Original</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="variables-financieras-1" class="level3" data-number="3.1.2">
+<h3 data-number="3.1.2" class="anchored" data-anchor-id="variables-financieras-1"><span class="header-section-number">3.1.2</span> Variables Financieras</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 32%">
+<col style="width: 41%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Descripción</th>
+<th>Origen</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>AMT_CREDIT</code></td>
+<td>Monto del crédito solicitado</td>
+<td>Original</td>
+</tr>
+<tr class="even">
+<td><code>AMT_INCOME_TOTAL</code></td>
+<td>Ingreso total declarado</td>
+<td>Original</td>
+</tr>
+<tr class="odd">
+<td><code>AMT_ANNUITY</code></td>
+<td>Anualidad del préstamo</td>
+<td>Original</td>
+</tr>
+<tr class="even">
+<td><code>CREDIT_INCOME_RATIO</code></td>
+<td>Ratio crédito/ingreso</td>
+<td><strong>Construida</strong></td>
+</tr>
+<tr class="odd">
+<td><code>INGRESO_PER_CAPITA</code></td>
+<td>Ingreso por miembro de familia</td>
+<td><strong>Construida</strong></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="scores-de-riesgo-externos-1" class="level3" data-number="3.1.3">
+<h3 data-number="3.1.3" class="anchored" data-anchor-id="scores-de-riesgo-externos-1"><span class="header-section-number">3.1.3</span> Scores de Riesgo Externos</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 32%">
+<col style="width: 41%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Descripción</th>
+<th>Origen</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>EXT_SOURCE_1</code></td>
+<td>Score externo fuente 1</td>
+<td>Original</td>
+</tr>
+<tr class="even">
+<td><code>EXT_SOURCE_2</code></td>
+<td>Score externo fuente 2</td>
+<td>Original</td>
+</tr>
+<tr class="odd">
+<td><code>EXT_SOURCE_3</code></td>
+<td>Score externo fuente 3</td>
+<td>Original</td>
+</tr>
+<tr class="even">
+<td><code>SCORE_PROMEDIO</code></td>
+<td>Promedio de los tres scores externos</td>
+<td><strong>Construida</strong></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="historial-crediticio-desde-bureau" class="level3" data-number="3.1.4">
+<h3 data-number="3.1.4" class="anchored" data-anchor-id="historial-crediticio-desde-bureau"><span class="header-section-number">3.1.4</span> Historial Crediticio (desde Bureau)</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 32%">
+<col style="width: 41%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Descripción</th>
+<th>Origen</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>CREDITOS_ACTIVOS</code></td>
+<td>Número de créditos activos en buró</td>
+<td><strong>Construida</strong></td>
+</tr>
+<tr class="even">
+<td><code>CREDITOS_CERRADOS</code></td>
+<td>Número de créditos cerrados en buró</td>
+<td><strong>Construida</strong></td>
+</tr>
+<tr class="odd">
+<td><code>TOTAL_CREDITO_OTORGADO</code></td>
+<td>Suma histórica de créditos</td>
+<td><strong>Construida</strong></td>
+</tr>
+<tr class="even">
+<td><code>TOTAL_DEUDA_ACTUAL</code></td>
+<td>Deuda vigente total</td>
+<td><strong>Construida</strong></td>
+</tr>
+<tr class="odd">
+<td><code>PCT_MESES_MORA</code></td>
+<td>Porcentaje de meses con mora histórica</td>
+<td><strong>Construida</strong></td>
+</tr>
+<tr class="even">
+<td><code>CREDITOS_CON_IMPAGO</code></td>
+<td>Número de créditos con historial de impago</td>
+<td><strong>Construida</strong></td>
+</tr>
+<tr class="odd">
+<td><code>MAX_DIAS_MORA</code></td>
+<td>Máximo de días en mora</td>
+<td><strong>Construida</strong></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="variables-de-préstamos-previos" class="level3" data-number="3.1.5">
+<h3 data-number="3.1.5" class="anchored" data-anchor-id="variables-de-préstamos-previos"><span class="header-section-number">3.1.5</span> Variables de Préstamos Previos</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 32%">
+<col style="width: 41%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Descripción</th>
+<th>Origen</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>NUM_PRESTAMOS_PREVIOS</code></td>
+<td>Cantidad de préstamos anteriores</td>
+<td><strong>Construida</strong></td>
+</tr>
+<tr class="even">
+<td><code>TASA_INTERES_PROMEDIO</code></td>
+<td>Tasa de interés promedio histórica</td>
+<td><strong>Construida</strong></td>
+</tr>
+<tr class="odd">
+<td><code>PLAZO_PROMEDIO</code></td>
+<td>Plazo promedio de créditos previos</td>
+<td><strong>Construida</strong></td>
+</tr>
+<tr class="even">
+<td><code>MONTO_PROMEDIO_PREVIO</code></td>
+<td>Monto promedio de créditos previos</td>
+<td><strong>Construida</strong></td>
+</tr>
+<tr class="odd">
+<td><code>TOTAL_CREDITO_HISTORICO</code></td>
+<td>Suma total de créditos históricos</td>
+<td><strong>Construida</strong></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="variables-de-comportamiento-de-pago" class="level3" data-number="3.1.6">
+<h3 data-number="3.1.6" class="anchored" data-anchor-id="variables-de-comportamiento-de-pago"><span class="header-section-number">3.1.6</span> Variables de Comportamiento de Pago</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 32%">
+<col style="width: 41%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Descripción</th>
+<th>Origen</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>RATIO_PAGO_CUOTA</code></td>
+<td>Ratio pago realizado / cuota programada</td>
+<td><strong>Construida</strong></td>
+</tr>
+<tr class="even">
+<td><code>RATIO_PAGO_MINIMO_TC</code></td>
+<td>Ratio de pago mínimo en tarjetas</td>
+<td><strong>Construida</strong></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="variables-de-activos-1" class="level3" data-number="3.1.7">
+<h3 data-number="3.1.7" class="anchored" data-anchor-id="variables-de-activos-1"><span class="header-section-number">3.1.7</span> Variables de Activos</h3>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Descripción</th>
+<th>Origen</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>FLAG_OWN_CAR</code></td>
+<td>Posesión de automóvil</td>
+<td>Original</td>
+</tr>
+<tr class="even">
+<td><code>FLAG_OWN_REALTY</code></td>
+<td>Posesión de inmueble</td>
+<td>Original</td>
+</tr>
+<tr class="odd">
+<td><code>NUM_ACTIVOS</code></td>
+<td>Suma de activos poseídos (0, 1 o 2)</td>
+<td><strong>Construida</strong></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="código-de-generación-de-variables" class="level2" data-number="3.2">
+<h2 data-number="3.2" class="anchored" data-anchor-id="código-de-generación-de-variables"><span class="header-section-number">3.2</span> Código de Generación de Variables</h2>
+<div id="11035764" class="cell" data-execution_count="5">
+<details class="code-fold">
+<summary>Ver código de ingeniería de variables</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ============================================================================</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co"># GENERACIÓN DE FEATURES - VERSIÓN OPTIMIZADA</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># ============================================================================</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># PARTE 1: FEATURES BASE DE APPLICATION</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> app_train[[<span class="st">'SK_ID_CURR'</span>, <span class="st">'TARGET'</span>]].copy()</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Features básicas</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'AMT_CREDIT'</span>] <span class="op">=</span> app_train[<span class="st">'AMT_CREDIT'</span>]</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'AMT_ANNUITY'</span>] <span class="op">=</span> app_train[<span class="st">'AMT_ANNUITY'</span>]</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'AMT_INCOME_TOTAL'</span>] <span class="op">=</span> app_train[<span class="st">'AMT_INCOME_TOTAL'</span>]</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Edad</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'DAYS_BIRTH'</span>] <span class="op">=</span> app_train[<span class="st">'DAYS_BIRTH'</span>]</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'EDAD_ANOS'</span>] <span class="op">=</span> <span class="bu">abs</span>(app_train[<span class="st">'DAYS_BIRTH'</span>]) <span class="op">/</span> <span class="fl">365.25</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Scores externos - Promedio</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'EXT_SOURCE_1'</span>] <span class="op">=</span> app_train[<span class="st">'EXT_SOURCE_1'</span>]</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'EXT_SOURCE_2'</span>] <span class="op">=</span> app_train[<span class="st">'EXT_SOURCE_2'</span>]</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'EXT_SOURCE_3'</span>] <span class="op">=</span> app_train[<span class="st">'EXT_SOURCE_3'</span>]</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'SCORE_PROMEDIO'</span>] <span class="op">=</span> app_train[[<span class="st">'EXT_SOURCE_1'</span>, <span class="st">'EXT_SOURCE_2'</span>, <span class="st">'EXT_SOURCE_3'</span>]].mean(axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="co"># Ratios financieros</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'CREDIT_INCOME_RATIO'</span>] <span class="op">=</span> df[<span class="st">'AMT_CREDIT'</span>] <span class="op">/</span> df[<span class="st">'AMT_INCOME_TOTAL'</span>]</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'INGRESO_PER_CAPITA'</span>] <span class="op">=</span> np.where(</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>    df[<span class="st">'CNT_FAM_MEMBERS'</span>] <span class="op">&gt;</span> <span class="dv">0</span>,</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>    df[<span class="st">'AMT_INCOME_TOTAL'</span>] <span class="op">/</span> df[<span class="st">'CNT_FAM_MEMBERS'</span>],</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>    df[<span class="st">'AMT_INCOME_TOTAL'</span>]</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a><span class="co"># Activos</span></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'NUM_ACTIVOS'</span>] <span class="op">=</span> (app_train[<span class="st">'FLAG_OWN_CAR'</span>] <span class="op">==</span> <span class="st">'Y'</span>).astype(<span class="bu">int</span>) <span class="op">+</span> <span class="op">\</span></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>                    (app_train[<span class="st">'FLAG_OWN_REALTY'</span>] <span class="op">==</span> <span class="st">'Y'</span>).astype(<span class="bu">int</span>)</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a><span class="co"># PARTE 2: FEATURES DE BUREAU</span></span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>bureau_agg <span class="op">=</span> bureau.groupby(<span class="st">'SK_ID_CURR'</span>).agg({</span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>    <span class="st">'AMT_CREDIT_SUM'</span>: <span class="st">'sum'</span>,</span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>    <span class="st">'AMT_CREDIT_SUM_DEBT'</span>: <span class="st">'sum'</span>,</span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>    <span class="st">'CREDIT_DAY_OVERDUE'</span>: <span class="st">'max'</span>,</span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>    <span class="st">'SK_ID_BUREAU'</span>: <span class="st">'count'</span></span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>}).reset_index()</span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a><span class="co"># Créditos activos y cerrados</span></span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>bureau_active <span class="op">=</span> bureau[bureau[<span class="st">'CREDIT_ACTIVE'</span>] <span class="op">==</span> <span class="st">'Active'</span>].groupby(<span class="st">'SK_ID_CURR'</span>).size()</span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>bureau_closed <span class="op">=</span> bureau[bureau[<span class="st">'CREDIT_ACTIVE'</span>] <span class="op">==</span> <span class="st">'Closed'</span>].groupby(<span class="st">'SK_ID_CURR'</span>).size()</span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a><span class="co"># PARTE 3: FEATURES DE BUREAU BALANCE</span></span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a>bureau_balance_merged[<span class="st">'EN_MORA'</span>] <span class="op">=</span> bureau_balance_merged[<span class="st">'STATUS'</span>].isin([<span class="st">'1'</span>, <span class="st">'2'</span>, <span class="st">'3'</span>, <span class="st">'4'</span>, <span class="st">'5'</span>])</span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a>balance_agg <span class="op">=</span> bureau_balance_merged.groupby(<span class="st">'SK_ID_CURR'</span>).agg({</span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>    <span class="st">'EN_MORA'</span>: <span class="st">'sum'</span>,</span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a>    <span class="st">'STATUS'</span>: <span class="st">'count'</span></span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a>balance_agg[<span class="st">'PCT_MESES_MORA'</span>] <span class="op">=</span> (balance_agg[<span class="st">'EN_MORA'</span>] <span class="op">/</span> balance_agg[<span class="st">'STATUS'</span>]) <span class="op">*</span> <span class="dv">100</span></span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a><span class="co"># PARTE 4: FEATURES DE PREVIOUS APPLICATION</span></span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a>prev_agg <span class="op">=</span> prev_app.groupby(<span class="st">'SK_ID_CURR'</span>).agg({</span>
+<span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a>    <span class="st">'SK_ID_PREV'</span>: <span class="st">'count'</span>,</span>
+<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a>    <span class="st">'RATE_INTEREST_PRIMARY'</span>: <span class="st">'mean'</span>,</span>
+<span id="cb1-59"><a href="#cb1-59" aria-hidden="true" tabindex="-1"></a>    <span class="st">'CNT_PAYMENT'</span>: <span class="st">'mean'</span>,</span>
+<span id="cb1-60"><a href="#cb1-60" aria-hidden="true" tabindex="-1"></a>    <span class="st">'AMT_CREDIT'</span>: [<span class="st">'mean'</span>, <span class="st">'sum'</span>]</span>
+<span id="cb1-61"><a href="#cb1-61" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb1-62"><a href="#cb1-62" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-63"><a href="#cb1-63" aria-hidden="true" tabindex="-1"></a><span class="co"># PARTE 5: FEATURES DE INSTALLMENTS</span></span>
+<span id="cb1-64"><a href="#cb1-64" aria-hidden="true" tabindex="-1"></a>valid_installments[<span class="st">'PAYMENT_RATIO'</span>] <span class="op">=</span> valid_installments[<span class="st">'AMT_PAYMENT'</span>] <span class="op">/</span> valid_installments[<span class="st">'AMT_INSTALMENT'</span>]</span>
+<span id="cb1-65"><a href="#cb1-65" aria-hidden="true" tabindex="-1"></a>install_agg <span class="op">=</span> valid_installments.groupby(<span class="st">'SK_ID_CURR'</span>)[<span class="st">'PAYMENT_RATIO'</span>].mean()</span>
+<span id="cb1-66"><a href="#cb1-66" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-67"><a href="#cb1-67" aria-hidden="true" tabindex="-1"></a><span class="co"># PARTE 6: FEATURES DE CREDIT CARD</span></span>
+<span id="cb1-68"><a href="#cb1-68" aria-hidden="true" tabindex="-1"></a>valid_cc[<span class="st">'PAYMENT_MIN_RATIO'</span>] <span class="op">=</span> valid_cc[<span class="st">'AMT_PAYMENT_CURRENT'</span>] <span class="op">/</span> valid_cc[<span class="st">'AMT_INST_MIN_REGULARITY'</span>]</span>
+<span id="cb1-69"><a href="#cb1-69" aria-hidden="true" tabindex="-1"></a>cc_agg <span class="op">=</span> valid_cc.groupby(<span class="st">'SK_ID_CURR'</span>)[<span class="st">'PAYMENT_MIN_RATIO'</span>].mean()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+</section>
+<section id="grafo-causal-del-impago" class="level2" data-number="3.3">
+<h2 data-number="3.3" class="anchored" data-anchor-id="grafo-causal-del-impago"><span class="header-section-number">3.3</span> Grafo Causal del Impago</h2>
+<p>El análisis causal nos permite entender las relaciones entre variables:</p>
+<div id="cell-fig-grafo-causal" class="cell" data-execution_count="6">
+<div class="cell-output cell-output-display">
+<div id="fig-grafo-causal" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-grafo-causal-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="reporte-completo_files/figure-html/fig-grafo-causal-output-1.png" width="1332" height="755" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-grafo-causal-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Estructura causal simplificada del riesgo de impago
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="subset-final-de-variables-utilizadas" class="level1" data-number="4">
+<h1 data-number="4"><span class="header-section-number">4</span> Subset Final de Variables Utilizadas</h1>
+<section id="variables-seleccionadas-para-el-modelado" class="level2" data-number="4.1">
+<h2 data-number="4.1" class="anchored" data-anchor-id="variables-seleccionadas-para-el-modelado"><span class="header-section-number">4.1</span> Variables Seleccionadas para el Modelado</h2>
+<p>Después del análisis exploratorio y la ingeniería de variables, se seleccionó un subset de <strong>24 variables</strong> para el modelado final:</p>
+<div class="cell" data-execution_count="7">
+<div id="tbl-variables-finales" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="7">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-variables-finales-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;3: Variables finales utilizadas en el modelado
+</figcaption>
+<div aria-describedby="tbl-variables-finales-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display">
+<style type="text/css">
+</style>
+
+<table id="T_9416b" class="do-not-create-environment cell caption-top table table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th id="T_9416b_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">Variable</th>
+<th id="T_9416b_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">Tipo</th>
+<th id="T_9416b_level0_col2" class="col_heading level0 col2" data-quarto-table-cell-role="th">Categoría</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td id="T_9416b_row0_col0" class="data row0 col0">EDAD_ANOS</td>
+<td id="T_9416b_row0_col1" class="data row0 col1">Continua</td>
+<td id="T_9416b_row0_col2" class="data row0 col2">Demográfica</td>
+</tr>
+<tr class="even">
+<td id="T_9416b_row1_col0" class="data row1 col0">SCORE_PROMEDIO</td>
+<td id="T_9416b_row1_col1" class="data row1 col1">Continua [0,1]</td>
+<td id="T_9416b_row1_col2" class="data row1 col2">Score</td>
+</tr>
+<tr class="odd">
+<td id="T_9416b_row2_col0" class="data row2 col0">CREDIT_INCOME_RATIO</td>
+<td id="T_9416b_row2_col1" class="data row2 col1">Continua</td>
+<td id="T_9416b_row2_col2" class="data row2 col2">Financiera</td>
+</tr>
+<tr class="even">
+<td id="T_9416b_row3_col0" class="data row3 col0">NAME_FAMILY_STATUS</td>
+<td id="T_9416b_row3_col1" class="data row3 col1">Categórica</td>
+<td id="T_9416b_row3_col2" class="data row3 col2">Demográfica</td>
+</tr>
+<tr class="odd">
+<td id="T_9416b_row4_col0" class="data row4 col0">CNT_CHILDREN</td>
+<td id="T_9416b_row4_col1" class="data row4 col1">Discreta</td>
+<td id="T_9416b_row4_col2" class="data row4 col2">Demográfica</td>
+</tr>
+<tr class="even">
+<td id="T_9416b_row5_col0" class="data row5 col0">CODE_GENDER</td>
+<td id="T_9416b_row5_col1" class="data row5 col1">Categórica</td>
+<td id="T_9416b_row5_col2" class="data row5 col2">Demográfica</td>
+</tr>
+<tr class="odd">
+<td id="T_9416b_row6_col0" class="data row6 col0">NAME_EDUCATION_TYPE</td>
+<td id="T_9416b_row6_col1" class="data row6 col1">Categórica</td>
+<td id="T_9416b_row6_col2" class="data row6 col2">Demográfica</td>
+</tr>
+<tr class="even">
+<td id="T_9416b_row7_col0" class="data row7 col0">INGRESO_PER_CAPITA</td>
+<td id="T_9416b_row7_col1" class="data row7 col1">Continua</td>
+<td id="T_9416b_row7_col2" class="data row7 col2">Financiera</td>
+</tr>
+<tr class="odd">
+<td id="T_9416b_row8_col0" class="data row8 col0">NUM_ACTIVOS</td>
+<td id="T_9416b_row8_col1" class="data row8 col1">Discreta [0,2]</td>
+<td id="T_9416b_row8_col2" class="data row8 col2">Activos</td>
+</tr>
+<tr class="even">
+<td id="T_9416b_row9_col0" class="data row9 col0">TOTAL_CREDITO_DISPONIBLE</td>
+<td id="T_9416b_row9_col1" class="data row9 col1">Continua</td>
+<td id="T_9416b_row9_col2" class="data row9 col2">Historial</td>
+</tr>
+<tr class="odd">
+<td id="T_9416b_row10_col0" class="data row10 col0">TOTAL_CREDITO_OTORGADO</td>
+<td id="T_9416b_row10_col1" class="data row10 col1">Continua</td>
+<td id="T_9416b_row10_col2" class="data row10 col2">Historial</td>
+</tr>
+<tr class="even">
+<td id="T_9416b_row11_col0" class="data row11 col0">TOTAL_DEUDA_ACTUAL</td>
+<td id="T_9416b_row11_col1" class="data row11 col1">Continua</td>
+<td id="T_9416b_row11_col2" class="data row11 col2">Historial</td>
+</tr>
+<tr class="odd">
+<td id="T_9416b_row12_col0" class="data row12 col0">MAX_DIAS_MORA</td>
+<td id="T_9416b_row12_col1" class="data row12 col1">Continua</td>
+<td id="T_9416b_row12_col2" class="data row12 col2">Historial</td>
+</tr>
+<tr class="even">
+<td id="T_9416b_row13_col0" class="data row13 col0">CREDITOS_ACTIVOS</td>
+<td id="T_9416b_row13_col1" class="data row13 col1">Discreta</td>
+<td id="T_9416b_row13_col2" class="data row13 col2">Historial</td>
+</tr>
+<tr class="odd">
+<td id="T_9416b_row14_col0" class="data row14 col0">CREDITOS_CERRADOS</td>
+<td id="T_9416b_row14_col1" class="data row14 col1">Discreta</td>
+<td id="T_9416b_row14_col2" class="data row14 col2">Historial</td>
+</tr>
+<tr class="even">
+<td id="T_9416b_row15_col0" class="data row15 col0">PCT_MESES_MORA</td>
+<td id="T_9416b_row15_col1" class="data row15 col1">Continua [0,100]</td>
+<td id="T_9416b_row15_col2" class="data row15 col2">Historial</td>
+</tr>
+<tr class="odd">
+<td id="T_9416b_row16_col0" class="data row16 col0">CREDITOS_CON_IMPAGO</td>
+<td id="T_9416b_row16_col1" class="data row16 col1">Discreta</td>
+<td id="T_9416b_row16_col2" class="data row16 col2">Historial</td>
+</tr>
+<tr class="even">
+<td id="T_9416b_row17_col0" class="data row17 col0">NUM_PRESTAMOS_PREVIOS</td>
+<td id="T_9416b_row17_col1" class="data row17 col1">Discreta</td>
+<td id="T_9416b_row17_col2" class="data row17 col2">Préstamos Previos</td>
+</tr>
+<tr class="odd">
+<td id="T_9416b_row18_col0" class="data row18 col0">TASA_INTERES_PROMEDIO</td>
+<td id="T_9416b_row18_col1" class="data row18 col1">Continua</td>
+<td id="T_9416b_row18_col2" class="data row18 col2">Préstamos Previos</td>
+</tr>
+<tr class="even">
+<td id="T_9416b_row19_col0" class="data row19 col0">PLAZO_PROMEDIO</td>
+<td id="T_9416b_row19_col1" class="data row19 col1">Continua</td>
+<td id="T_9416b_row19_col2" class="data row19 col2">Préstamos Previos</td>
+</tr>
+<tr class="odd">
+<td id="T_9416b_row20_col0" class="data row20 col0">MONTO_PROMEDIO_PREVIO</td>
+<td id="T_9416b_row20_col1" class="data row20 col1">Continua</td>
+<td id="T_9416b_row20_col2" class="data row20 col2">Préstamos Previos</td>
+</tr>
+<tr class="even">
+<td id="T_9416b_row21_col0" class="data row21 col0">TOTAL_CREDITO_HISTORICO</td>
+<td id="T_9416b_row21_col1" class="data row21 col1">Continua</td>
+<td id="T_9416b_row21_col2" class="data row21 col2">Préstamos Previos</td>
+</tr>
+<tr class="odd">
+<td id="T_9416b_row22_col0" class="data row22 col0">RATIO_PAGO_CUOTA</td>
+<td id="T_9416b_row22_col1" class="data row22 col1">Continua</td>
+<td id="T_9416b_row22_col2" class="data row22 col2">Comportamiento</td>
+</tr>
+<tr class="even">
+<td id="T_9416b_row23_col0" class="data row23 col0">RATIO_PAGO_MINIMO_TC</td>
+<td id="T_9416b_row23_col1" class="data row23 col1">Continua</td>
+<td id="T_9416b_row23_col2" class="data row23 col2">Comportamiento</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+</section>
+<section id="análisis-de-correlaciones" class="level2" data-number="4.2">
+<h2 data-number="4.2" class="anchored" data-anchor-id="análisis-de-correlaciones"><span class="header-section-number">4.2</span> Análisis de Correlaciones</h2>
+<section id="correlación-con-la-variable-objetivo" class="level3" data-number="4.2.1">
+<h3 data-number="4.2.1" class="anchored" data-anchor-id="correlación-con-la-variable-objetivo"><span class="header-section-number">4.2.1</span> Correlación con la Variable Objetivo</h3>
+<div id="cell-fig-correlaciones" class="cell" data-execution_count="8">
+<div class="cell-output cell-output-display">
+<div id="fig-correlaciones" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-correlaciones-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="reporte-completo_files/figure-html/fig-correlaciones-output-1.png" width="948" height="756" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-correlaciones-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Correlación de variables con TARGET (ordenadas por valor absoluto)
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>Hallazgos clave del análisis de correlación:</strong></p>
+<ol type="1">
+<li><strong>Variables con mayor poder predictivo (|r| &gt; 0.1)</strong>:
+<ul>
+<li><code>SCORE_PROMEDIO</code> (r = -0.222): El promedio de scores externos es el mejor predictor individual</li>
+<li><code>EXT_SOURCE_3</code> (r = -0.179), <code>EXT_SOURCE_2</code> (r = -0.161), <code>EXT_SOURCE_1</code> (r = -0.155)</li>
+</ul></li>
+<li><strong>Variables demográficas</strong>:
+<ul>
+<li><code>EDAD_ANOS</code> (r = -0.078): Clientes más jóvenes tienen mayor probabilidad de default</li>
+</ul></li>
+<li><strong>Variables de historial crediticio</strong>:
+<ul>
+<li><code>CREDITOS_ACTIVOS</code> (r = +0.044): Más créditos activos aumentan el riesgo</li>
+<li><code>PCT_MESES_MORA</code> (r = +0.032): El historial de mora es indicativo de riesgo futuro</li>
+</ul></li>
+</ol>
+</section>
+<section id="matriz-de-correlación-heatmap" class="level3" data-number="4.2.2">
+<h3 data-number="4.2.2" class="anchored" data-anchor-id="matriz-de-correlación-heatmap"><span class="header-section-number">4.2.2</span> Matriz de Correlación (Heatmap)</h3>
+<div id="cell-fig-heatmap" class="cell" data-execution_count="9">
+<div class="cell-output cell-output-display">
+<div id="fig-heatmap" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-heatmap-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="reporte-completo_files/figure-html/fig-heatmap-output-1.png" width="1143" height="565" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-heatmap-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: Matriz de correlación entre las principales variables
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="comparación-de-perfiles-default-vs.-no-default" class="level3" data-number="4.2.3">
+<h3 data-number="4.2.3" class="anchored" data-anchor-id="comparación-de-perfiles-default-vs.-no-default"><span class="header-section-number">4.2.3</span> Comparación de Perfiles: Default vs.&nbsp;No Default</h3>
+<div class="cell" data-execution_count="10">
+<div id="tbl-comparacion-perfiles" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="10">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-comparacion-perfiles-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;4: Comparación de medias entre clientes que pagaron vs.&nbsp;hicieron default
+</figcaption>
+<div aria-describedby="tbl-comparacion-perfiles-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display">
+<style type="text/css">
+#T_f9e20_row0_col3 {
+  background-color: #e2f397;
+  color: #000000;
+}
+#T_f9e20_row1_col3 {
+  background-color: #f8fcb6;
+  color: #000000;
+}
+#T_f9e20_row2_col3 {
+  background-color: #8ecf67;
+  color: #000000;
+}
+#T_f9e20_row3_col3 {
+  background-color: #fffab6;
+  color: #000000;
+}
+#T_f9e20_row4_col3 {
+  background-color: #fdbf6f;
+  color: #000000;
+}
+#T_f9e20_row5_col3 {
+  background-color: #a50026;
+  color: #f1f1f1;
+}
+#T_f9e20_row6_col3 {
+  background-color: #ef633f;
+  color: #f1f1f1;
+}
+#T_f9e20_row7_col3 {
+  background-color: #eef8a8;
+  color: #000000;
+}
+#T_f9e20_row8_col3 {
+  background-color: #feda86;
+  color: #000000;
+}
+#T_f9e20_row9_col3 {
+  background-color: #006837;
+  color: #f1f1f1;
+}
+</style>
+
+<table id="T_f9e20" class="do-not-create-environment cell caption-top table table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th id="T_f9e20_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">Variable</th>
+<th id="T_f9e20_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">Pagó (0)</th>
+<th id="T_f9e20_level0_col2" class="col_heading level0 col2" data-quarto-table-cell-role="th">Default (1)</th>
+<th id="T_f9e20_level0_col3" class="col_heading level0 col3" data-quarto-table-cell-role="th">% Cambio</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td id="T_f9e20_row0_col0" class="data row0 col0">EDAD_ANOS</td>
+<td id="T_f9e20_row0_col1" class="data row0 col1">44.18</td>
+<td id="T_f9e20_row0_col2" class="data row0 col2">40.75</td>
+<td id="T_f9e20_row0_col3" class="data row0 col3">-7.77%</td>
+</tr>
+<tr class="even">
+<td id="T_f9e20_row1_col0" class="data row1 col0">CREDIT_INCOME_RATIO</td>
+<td id="T_f9e20_row1_col1" class="data row1 col1">3.96</td>
+<td id="T_f9e20_row1_col2" class="data row1 col2">3.89</td>
+<td id="T_f9e20_row1_col3" class="data row1 col3">-1.93%</td>
+</tr>
+<tr class="odd">
+<td id="T_f9e20_row2_col0" class="data row2 col0">SCORE_PROMEDIO</td>
+<td id="T_f9e20_row2_col1" class="data row2 col1">0.52</td>
+<td id="T_f9e20_row2_col2" class="data row2 col2">0.40</td>
+<td id="T_f9e20_row2_col3" class="data row2 col3">-23.52%</td>
+</tr>
+<tr class="even">
+<td id="T_f9e20_row3_col0" class="data row3 col0">TOTAL_DEUDA_ACTUAL</td>
+<td id="T_f9e20_row3_col1" class="data row3 col1">548083.00</td>
+<td id="T_f9e20_row3_col2" class="data row3 col2">558718.00</td>
+<td id="T_f9e20_row3_col3" class="data row3 col3">+1.94%</td>
+</tr>
+<tr class="odd">
+<td id="T_f9e20_row4_col0" class="data row4 col0">CREDITOS_ACTIVOS</td>
+<td id="T_f9e20_row4_col1" class="data row4 col1">1.74</td>
+<td id="T_f9e20_row4_col2" class="data row4 col2">2.03</td>
+<td id="T_f9e20_row4_col3" class="data row4 col3">+16.60%</td>
+</tr>
+<tr class="even">
+<td id="T_f9e20_row5_col0" class="data row5 col0">PCT_MESES_MORA</td>
+<td id="T_f9e20_row5_col1" class="data row5 col1">0.50</td>
+<td id="T_f9e20_row5_col2" class="data row5 col2">0.87</td>
+<td id="T_f9e20_row5_col3" class="data row5 col3">+73.41%</td>
+</tr>
+<tr class="odd">
+<td id="T_f9e20_row6_col0" class="data row6 col0">CREDITOS_CON_IMPAGO</td>
+<td id="T_f9e20_row6_col1" class="data row6 col1">0.22</td>
+<td id="T_f9e20_row6_col2" class="data row6 col2">0.28</td>
+<td id="T_f9e20_row6_col3" class="data row6 col3">+31.27%</td>
+</tr>
+<tr class="even">
+<td id="T_f9e20_row7_col0" class="data row7 col0">NUM_ACTIVOS</td>
+<td id="T_f9e20_row7_col1" class="data row7 col1">1.04</td>
+<td id="T_f9e20_row7_col2" class="data row7 col2">0.99</td>
+<td id="T_f9e20_row7_col3" class="data row7 col3">-4.67%</td>
+</tr>
+<tr class="odd">
+<td id="T_f9e20_row8_col0" class="data row8 col0">RATIO_PAGO_CUOTA</td>
+<td id="T_f9e20_row8_col1" class="data row8 col1">1.37</td>
+<td id="T_f9e20_row8_col2" class="data row8 col2">1.52</td>
+<td id="T_f9e20_row8_col3" class="data row8 col3">+10.97%</td>
+</tr>
+<tr class="even">
+<td id="T_f9e20_row9_col0" class="data row9 col0">RATIO_PAGO_MINIMO_TC</td>
+<td id="T_f9e20_row9_col1" class="data row9 col1">21.60</td>
+<td id="T_f9e20_row9_col2" class="data row9 col2">6.28</td>
+<td id="T_f9e20_row9_col3" class="data row9 col3">-70.93%</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<p><strong>Perfil del cliente en riesgo de default:</strong></p>
+<ul>
+<li><strong>Más joven</strong> (40.8 años vs 44.2 años, -7.8%)</li>
+<li><strong>Menor score crediticio</strong> (0.40 vs 0.52, -23.5%)</li>
+<li><strong>Más créditos activos</strong> (2.03 vs 1.74, +16.6%)</li>
+<li><strong>Mayor historial de mora</strong> (0.87% vs 0.50%, +73.4%)</li>
+<li><strong>Menor ratio de pago mínimo en tarjetas</strong> (6.28 vs 21.60, -70.9%)</li>
+</ul>
+</section>
+</section>
+</section>
+<section id="variables-descartadas" class="level1" data-number="5">
+<h1 data-number="5"><span class="header-section-number">5</span> Variables Descartadas</h1>
+<section id="lista-de-variables-eliminadas" class="level2" data-number="5.1">
+<h2 data-number="5.1" class="anchored" data-anchor-id="lista-de-variables-eliminadas"><span class="header-section-number">5.1</span> Lista de Variables Eliminadas</h2>
+<p>Se eliminaron <strong>15 variables</strong> del dataset original por ser redundantes o derivadas:</p>
+<div class="cell" data-execution_count="11">
+<div id="tbl-variables-dropeadas" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="11">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-variables-dropeadas-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;5: Variables eliminadas y justificación
+</figcaption>
+<div aria-describedby="tbl-variables-dropeadas-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display">
+<style type="text/css">
+</style>
+
+<table id="T_17e32" class="do-not-create-environment cell caption-top table table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th id="T_17e32_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">Variable</th>
+<th id="T_17e32_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">Razón de Eliminación</th>
+<th id="T_17e32_level0_col2" class="col_heading level0 col2" data-quarto-table-cell-role="th">Alternativa Usada</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td id="T_17e32_row0_col0" class="data row0 col0">DAYS_BIRTH</td>
+<td id="T_17e32_row0_col1" class="data row0 col1">Redundante - se usa EDAD_ANOS derivada</td>
+<td id="T_17e32_row0_col2" class="data row0 col2">EDAD_ANOS</td>
+</tr>
+<tr class="even">
+<td id="T_17e32_row1_col0" class="data row1 col0">AMT_CREDIT</td>
+<td id="T_17e32_row1_col1" class="data row1 col1">Redundante - capturada en CREDIT_INCOME_RATIO</td>
+<td id="T_17e32_row1_col2" class="data row1 col2">CREDIT_INCOME_RATIO</td>
+</tr>
+<tr class="odd">
+<td id="T_17e32_row2_col0" class="data row2 col0">AMT_INCOME_TOTAL</td>
+<td id="T_17e32_row2_col1" class="data row2 col1">Redundante - capturada en CREDIT_INCOME_RATIO e INGRESO_PER_CAPITA</td>
+<td id="T_17e32_row2_col2" class="data row2 col2">CREDIT_INCOME_RATIO, INGRESO_PER_CAPITA</td>
+</tr>
+<tr class="even">
+<td id="T_17e32_row3_col0" class="data row3 col0">AMT_ANNUITY</td>
+<td id="T_17e32_row3_col1" class="data row3 col1">Baja correlación con TARGET</td>
+<td id="T_17e32_row3_col2" class="data row3 col2">-</td>
+</tr>
+<tr class="odd">
+<td id="T_17e32_row4_col0" class="data row4 col0">EXT_SOURCE_1</td>
+<td id="T_17e32_row4_col1" class="data row4 col1">Redundante - incluida en SCORE_PROMEDIO</td>
+<td id="T_17e32_row4_col2" class="data row4 col2">SCORE_PROMEDIO</td>
+</tr>
+<tr class="even">
+<td id="T_17e32_row5_col0" class="data row5 col0">EXT_SOURCE_2</td>
+<td id="T_17e32_row5_col1" class="data row5 col1">Redundante - incluida en SCORE_PROMEDIO</td>
+<td id="T_17e32_row5_col2" class="data row5 col2">SCORE_PROMEDIO</td>
+</tr>
+<tr class="odd">
+<td id="T_17e32_row6_col0" class="data row6 col0">EXT_SOURCE_3</td>
+<td id="T_17e32_row6_col1" class="data row6 col1">Redundante - incluida en SCORE_PROMEDIO</td>
+<td id="T_17e32_row6_col2" class="data row6 col2">SCORE_PROMEDIO</td>
+</tr>
+<tr class="even">
+<td id="T_17e32_row7_col0" class="data row7 col0">CNT_FAM_MEMBERS</td>
+<td id="T_17e32_row7_col1" class="data row7 col1">Redundante - usada para calcular INGRESO_PER_CAPITA</td>
+<td id="T_17e32_row7_col2" class="data row7 col2">INGRESO_PER_CAPITA</td>
+</tr>
+<tr class="odd">
+<td id="T_17e32_row8_col0" class="data row8 col0">FLAG_OWN_CAR</td>
+<td id="T_17e32_row8_col1" class="data row8 col1">Redundante - incluida en NUM_ACTIVOS</td>
+<td id="T_17e32_row8_col2" class="data row8 col2">NUM_ACTIVOS</td>
+</tr>
+<tr class="even">
+<td id="T_17e32_row9_col0" class="data row9 col0">FLAG_OWN_REALTY</td>
+<td id="T_17e32_row9_col1" class="data row9 col1">Redundante - incluida en NUM_ACTIVOS</td>
+<td id="T_17e32_row9_col2" class="data row9 col2">NUM_ACTIVOS</td>
+</tr>
+<tr class="odd">
+<td id="T_17e32_row10_col0" class="data row10 col0">TOTAL_CONSULTAS_BURO</td>
+<td id="T_17e32_row10_col1" class="data row10 col1">Baja correlación con TARGET</td>
+<td id="T_17e32_row10_col2" class="data row10 col2">-</td>
+</tr>
+<tr class="even">
+<td id="T_17e32_row11_col0" class="data row11 col0">MESES_CON_MORA</td>
+<td id="T_17e32_row11_col1" class="data row11 col1">Redundante - usada para calcular PCT_MESES_MORA</td>
+<td id="T_17e32_row11_col2" class="data row11 col2">PCT_MESES_MORA</td>
+</tr>
+<tr class="odd">
+<td id="T_17e32_row12_col0" class="data row12 col0">TIENE_IMPAGOS</td>
+<td id="T_17e32_row12_col1" class="data row12 col1">Derivada de MAX_DIAS_MORA</td>
+<td id="T_17e32_row12_col2" class="data row12 col2">MAX_DIAS_MORA</td>
+</tr>
+<tr class="even">
+<td id="T_17e32_row13_col0" class="data row13 col0">ES_PRIMER_CREDITO</td>
+<td id="T_17e32_row13_col1" class="data row13 col1">Derivada de CANTIDAD_CREDITOS_BURO</td>
+<td id="T_17e32_row13_col2" class="data row13 col2">CREDITOS_ACTIVOS, CREDITOS_CERRADOS</td>
+</tr>
+<tr class="odd">
+<td id="T_17e32_row14_col0" class="data row14 col0">CANTIDAD_CREDITOS_BURO</td>
+<td id="T_17e32_row14_col1" class="data row14 col1">Baja correlación con TARGET</td>
+<td id="T_17e32_row14_col2" class="data row14 col2">CREDITOS_ACTIVOS, CREDITOS_CERRADOS</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+</section>
+<section id="código-de-eliminación-de-variables" class="level2" data-number="5.2">
+<h2 data-number="5.2" class="anchored" data-anchor-id="código-de-eliminación-de-variables"><span class="header-section-number">5.2</span> Código de Eliminación de Variables</h2>
+<div id="b5a4266b" class="cell" data-execution_count="12">
+<details class="code-fold">
+<summary>Ver código de eliminación de variables</summary>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Drop de variables redundantes/derivadas</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> df.drop(columns<span class="op">=</span>[</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Edad - se usa la derivada EDAD_ANOS</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">'DAYS_BIRTH'</span>,</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Montos base - capturados en ratios</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">'AMT_CREDIT'</span>,</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">'AMT_INCOME_TOTAL'</span>,</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">'AMT_ANNUITY'</span>,</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Scores individuales - se usa SCORE_PROMEDIO</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">'EXT_SOURCE_1'</span>,</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">'EXT_SOURCE_2'</span>,</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">'EXT_SOURCE_3'</span>,</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Familia - usada para calcular INGRESO_PER_CAPITA</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>    <span class="st">'CNT_FAM_MEMBERS'</span>,</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Activos - incluidos en NUM_ACTIVOS</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>    <span class="st">'FLAG_OWN_CAR'</span>,</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>    <span class="st">'FLAG_OWN_REALTY'</span>,</span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Consultas buró total - baja correlación</span></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>    <span class="st">'TOTAL_CONSULTAS_BURO'</span>,</span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Componente de ratio</span></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>    <span class="st">'MESES_CON_MORA'</span>,</span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Variables binarias derivadas</span></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>    <span class="st">'TIENE_IMPAGOS'</span>,</span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a>    <span class="st">'ES_PRIMER_CREDITO'</span>,</span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Créditos buró - baja correlación</span></span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a>    <span class="st">'CANTIDAD_CREDITOS_BURO'</span></span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+</section>
+<section id="justificación-de-la-reducción" class="level2" data-number="5.3">
+<h2 data-number="5.3" class="anchored" data-anchor-id="justificación-de-la-reducción"><span class="header-section-number">5.3</span> Justificación de la Reducción</h2>
+<p>La reducción de 39 a 24 variables ofrece varias ventajas:</p>
+<ol type="1">
+<li><strong>Reducción de multicolinealidad</strong>: Eliminamos variables altamente correlacionadas entre sí</li>
+<li><strong>Simplificación del modelo</strong>: Menos variables facilitan la interpretación</li>
+<li><strong>Menor riesgo de overfitting</strong>: Modelos más parsimoniosos generalizan mejor</li>
+<li><strong>Pérdida mínima de AUC</strong>: Solo 0.44% de pérdida en Random Forest (0.7451 → 0.7407)</li>
+</ol>
+</section>
+</section>
+<section id="regresión-logística" class="level1" data-number="6">
+<h1 data-number="6"><span class="header-section-number">6</span> Regresión Logística</h1>
+<section id="teoría" class="level2" data-number="6.1">
+<h2 data-number="6.1" class="anchored" data-anchor-id="teoría"><span class="header-section-number">6.1</span> Teoría</h2>
+<section id="función-sigmoide" class="level3" data-number="6.1.1">
+<h3 data-number="6.1.1" class="anchored" data-anchor-id="función-sigmoide"><span class="header-section-number">6.1.1</span> Función Sigmoide</h3>
+<p>La regresión logística es un modelo de clasificación que estima la probabilidad de que una observación pertenezca a una clase particular. El modelo utiliza la <strong>función sigmoide</strong> (o logística) para transformar una combinación lineal de las variables predictoras en una probabilidad:</p>
+<p><span class="math display">\[
+P(Y=1|X) = \sigma(z) = \frac{1}{1 + e^{-z}}
+\]</span></p>
+<p>Donde: <span class="math display">\[
+z = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + ... + \beta_p X_p
+\]</span></p>
+<div id="cell-fig-sigmoide" class="cell" data-execution_count="13">
+<div class="cell-output cell-output-display">
+<div id="fig-sigmoide" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-sigmoide-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="reporte-completo_files/figure-html/fig-sigmoide-output-1.png" width="947" height="563" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-sigmoide-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;5: Función Sigmoide (Logística)
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="interpretación-de-coeficientes" class="level3" data-number="6.1.2">
+<h3 data-number="6.1.2" class="anchored" data-anchor-id="interpretación-de-coeficientes"><span class="header-section-number">6.1.2</span> Interpretación de Coeficientes</h3>
+<p>Los coeficientes <span class="math inline">\(\beta_j\)</span> se interpretan en términos de <strong>odds ratios</strong>:</p>
+<p><span class="math display">\[
+\text{OR}_j = e^{\beta_j}
+\]</span></p>
+<ul>
+<li>Si <span class="math inline">\(\beta_j &gt; 0\)</span>: La variable aumenta la probabilidad de default</li>
+<li>Si <span class="math inline">\(\beta_j &lt; 0\)</span>: La variable disminuye la probabilidad de default</li>
+<li>Si <span class="math inline">\(\beta_j = 0\)</span>: La variable no tiene efecto</li>
+</ul>
+</section>
+<section id="función-de-pérdida-log-loss-entropía-cruzada-binaria" class="level3" data-number="6.1.3">
+<h3 data-number="6.1.3" class="anchored" data-anchor-id="función-de-pérdida-log-loss-entropía-cruzada-binaria"><span class="header-section-number">6.1.3</span> Función de Pérdida: Log-Loss (Entropía Cruzada Binaria)</h3>
+<p>Los parámetros se estiman minimizando la <strong>log-loss</strong> (también conocida como entropía cruzada binaria):</p>
+<p><span class="math display">\[
+\mathcal{L}(\beta) = -\frac{1}{n} \sum_{i=1}^{n} \left[ y_i \log(\hat{p}_i) + (1-y_i) \log(1-\hat{p}_i) \right]
+\]</span></p>
+<p>Donde: - <span class="math inline">\(y_i\)</span> es la etiqueta real (0 o 1) - <span class="math inline">\(\hat{p}_i = P(Y_i = 1 | X_i)\)</span> es la probabilidad predicha</p>
+</section>
+</section>
+<section id="parámetros-y-entrenamiento" class="level2" data-number="6.2">
+<h2 data-number="6.2" class="anchored" data-anchor-id="parámetros-y-entrenamiento"><span class="header-section-number">6.2</span> Parámetros y Entrenamiento</h2>
+<section id="regularización" class="level3" data-number="6.2.1">
+<h3 data-number="6.2.1" class="anchored" data-anchor-id="regularización"><span class="header-section-number">6.2.1</span> Regularización</h3>
+<p>Para prevenir el overfitting, aplicamos <strong>regularización L2 (Ridge)</strong>:</p>
+<p><span class="math display">\[
+\mathcal{L}_{reg}(\beta) = \mathcal{L}(\beta) + \lambda \sum_{j=1}^{p} \beta_j^2
+\]</span></p>
+<p>Tipos de regularización disponibles:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 26%">
+<col style="width: 39%">
+<col style="width: 34%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Tipo</th>
+<th>Fórmula</th>
+<th>Efecto</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>L1 (Lasso)</strong></td>
+<td><span class="math inline">\(\lambda \sum \|\beta_j\|\)</span></td>
+<td>Genera coeficientes exactamente 0 (selección de variables)</td>
+</tr>
+<tr class="even">
+<td><strong>L2 (Ridge)</strong></td>
+<td><span class="math inline">\(\lambda \sum \beta_j^2\)</span></td>
+<td>Reduce magnitud de coeficientes (usado en este análisis)</td>
+</tr>
+<tr class="odd">
+<td><strong>Elastic Net</strong></td>
+<td><span class="math inline">\(\alpha \cdot L1 + (1-\alpha) \cdot L2\)</span></td>
+<td>Combinación de ambos</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="configuración-del-modelo" class="level3" data-number="6.2.2">
+<h3 data-number="6.2.2" class="anchored" data-anchor-id="configuración-del-modelo"><span class="header-section-number">6.2.2</span> Configuración del Modelo</h3>
+<div id="9de8a4af" class="cell" data-execution_count="14">
+<details class="code-fold">
+<summary>Ver configuración del modelo</summary>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> LogisticRegression(</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    penalty<span class="op">=</span><span class="st">'l2'</span>,           <span class="co"># Regularización L2 (Ridge)</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    C<span class="op">=</span><span class="fl">1.0</span>,                  <span class="co"># Inverso de la fuerza de regularización</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    solver<span class="op">=</span><span class="st">'lbfgs'</span>,         <span class="co"># Algoritmo de optimización</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    max_iter<span class="op">=</span><span class="dv">1000</span>,          <span class="co"># Máximo de iteraciones</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    class_weight<span class="op">=</span><span class="st">'balanced'</span>, <span class="co"># Balanceo de clases</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    random_state<span class="op">=</span><span class="dv">42</span>,</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    n_jobs<span class="op">=-</span><span class="dv">1</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+</section>
+<section id="validación-cruzada" class="level3" data-number="6.2.3">
+<h3 data-number="6.2.3" class="anchored" data-anchor-id="validación-cruzada"><span class="header-section-number">6.2.3</span> Validación Cruzada</h3>
+<p>Utilizamos <strong>5-fold cross-validation</strong> para evaluar la estabilidad del modelo:</p>
+<div class="cell" data-execution_count="15">
+<div id="tbl-cv-logreg" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="15">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-cv-logreg-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;6: Resultados de validación cruzada (5-fold)
+</figcaption>
+<div aria-describedby="tbl-cv-logreg-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display">
+<style type="text/css">
+</style>
+
+<table id="T_ddf73" class="do-not-create-environment cell caption-top table table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th id="T_ddf73_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">Fold</th>
+<th id="T_ddf73_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">ROC-AUC</th>
+<th id="T_ddf73_level0_col2" class="col_heading level0 col2" data-quarto-table-cell-role="th">Std</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td id="T_ddf73_row0_col0" class="data row0 col0">1</td>
+<td id="T_ddf73_row0_col1" class="data row0 col1">0.731100</td>
+<td id="T_ddf73_row0_col2" class="data row0 col2">-</td>
+</tr>
+<tr class="even">
+<td id="T_ddf73_row1_col0" class="data row1 col0">2</td>
+<td id="T_ddf73_row1_col1" class="data row1 col1">0.725700</td>
+<td id="T_ddf73_row1_col2" class="data row1 col2">-</td>
+</tr>
+<tr class="odd">
+<td id="T_ddf73_row2_col0" class="data row2 col0">3</td>
+<td id="T_ddf73_row2_col1" class="data row2 col1">0.729700</td>
+<td id="T_ddf73_row2_col2" class="data row2 col2">-</td>
+</tr>
+<tr class="even">
+<td id="T_ddf73_row3_col0" class="data row3 col0">4</td>
+<td id="T_ddf73_row3_col1" class="data row3 col1">0.734600</td>
+<td id="T_ddf73_row3_col2" class="data row3 col2">-</td>
+</tr>
+<tr class="odd">
+<td id="T_ddf73_row4_col0" class="data row4 col0">5</td>
+<td id="T_ddf73_row4_col1" class="data row4 col1">0.738200</td>
+<td id="T_ddf73_row4_col2" class="data row4 col2">-</td>
+</tr>
+<tr class="even">
+<td id="T_ddf73_row5_col0" class="data row5 col0">Media</td>
+<td id="T_ddf73_row5_col1" class="data row5 col1">0.731900</td>
+<td id="T_ddf73_row5_col2" class="data row5 col2">±0.0042</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+</section>
+</section>
+<section id="resultados-del-modelo" class="level2" data-number="6.3">
+<h2 data-number="6.3" class="anchored" data-anchor-id="resultados-del-modelo"><span class="header-section-number">6.3</span> Resultados del Modelo</h2>
+<div class="cell" data-execution_count="16">
+<div id="tbl-resultados-logreg" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="16">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-resultados-logreg-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;7: Métricas del modelo de Regresión Logística
+</figcaption>
+<div aria-describedby="tbl-resultados-logreg-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display">
+<style type="text/css">
+</style>
+
+<table id="T_3b6f2" class="do-not-create-environment cell caption-top table table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th id="T_3b6f2_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">Métrica</th>
+<th id="T_3b6f2_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">Train</th>
+<th id="T_3b6f2_level0_col2" class="col_heading level0 col2" data-quarto-table-cell-role="th">Test</th>
+<th id="T_3b6f2_level0_col3" class="col_heading level0 col3" data-quarto-table-cell-role="th">Diferencia</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td id="T_3b6f2_row0_col0" class="data row0 col0">ROC-AUC</td>
+<td id="T_3b6f2_row0_col1" class="data row0 col1">0.7323</td>
+<td id="T_3b6f2_row0_col2" class="data row0 col2">0.7335</td>
+<td id="T_3b6f2_row0_col3" class="data row0 col3">+0.0012</td>
+</tr>
+<tr class="even">
+<td id="T_3b6f2_row1_col0" class="data row1 col0">Average Precision</td>
+<td id="T_3b6f2_row1_col1" class="data row1 col1">0.2049</td>
+<td id="T_3b6f2_row1_col2" class="data row1 col2">0.2112</td>
+<td id="T_3b6f2_row1_col3" class="data row1 col3">+0.0063</td>
+</tr>
+<tr class="odd">
+<td id="T_3b6f2_row2_col0" class="data row2 col0">Accuracy</td>
+<td id="T_3b6f2_row2_col1" class="data row2 col1">0.6800</td>
+<td id="T_3b6f2_row2_col2" class="data row2 col2">0.6832</td>
+<td id="T_3b6f2_row2_col3" class="data row2 col3">+0.0032</td>
+</tr>
+<tr class="even">
+<td id="T_3b6f2_row3_col0" class="data row3 col0">Recall (Default)</td>
+<td id="T_3b6f2_row3_col1" class="data row3 col1">0.6600</td>
+<td id="T_3b6f2_row3_col2" class="data row3 col2">0.6600</td>
+<td id="T_3b6f2_row3_col3" class="data row3 col3">+0.0000</td>
+</tr>
+<tr class="odd">
+<td id="T_3b6f2_row4_col0" class="data row4 col0">Precision (Default)</td>
+<td id="T_3b6f2_row4_col1" class="data row4 col1">0.1500</td>
+<td id="T_3b6f2_row4_col2" class="data row4 col2">0.1500</td>
+<td id="T_3b6f2_row4_col3" class="data row4 col3">+0.0000</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<section id="matriz-de-confusión" class="level3" data-number="6.3.1">
+<h3 data-number="6.3.1" class="anchored" data-anchor-id="matriz-de-confusión"><span class="header-section-number">6.3.1</span> Matriz de Confusión</h3>
+<div id="cell-fig-cm-logreg" class="cell" data-execution_count="17">
+<div class="cell-output cell-output-display">
+<div id="fig-cm-logreg" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-cm-logreg-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="reporte-completo_files/figure-html/fig-cm-logreg-output-1.png" width="719" height="562" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-cm-logreg-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;6: Matriz de Confusión - Regresión Logística (Test Set)
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="importancia-de-variables" class="level3" data-number="6.3.2">
+<h3 data-number="6.3.2" class="anchored" data-anchor-id="importancia-de-variables"><span class="header-section-number">6.3.2</span> Importancia de Variables</h3>
+<div id="cell-fig-importancia-logreg" class="cell" data-execution_count="18">
+<div class="cell-output cell-output-display">
+<div id="fig-importancia-logreg" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-importancia-logreg-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="reporte-completo_files/figure-html/fig-importancia-logreg-output-1.png" width="949" height="754" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-importancia-logreg-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;7: Coeficientes de Regresión Logística (Top 15 variables)
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>Interpretación:</strong></p>
+<ul>
+<li><strong>SCORE_PROMEDIO</strong> (β = -1.23): El predictor más importante. Un aumento de 1 desviación estándar disminuye el log-odds de default en 1.23</li>
+<li><strong>EDAD_ANOS</strong> (β = -0.45): Mayor edad reduce el riesgo de default</li>
+<li><strong>CREDITOS_ACTIVOS</strong> (β = +0.28): Más créditos activos aumentan el riesgo</li>
+<li><strong>PCT_MESES_MORA</strong> (β = +0.25): Mayor historial de mora aumenta el riesgo</li>
+</ul>
+</section>
+</section>
+</section>
+<section id="random-forest" class="level1" data-number="7">
+<h1 data-number="7"><span class="header-section-number">7</span> Random Forest</h1>
+<section id="descripción-del-modelo" class="level2" data-number="7.1">
+<h2 data-number="7.1" class="anchored" data-anchor-id="descripción-del-modelo"><span class="header-section-number">7.1</span> Descripción del Modelo</h2>
+<p>Random Forest es un algoritmo de <strong>ensemble learning</strong> basado en árboles de decisión. El modelo construye múltiples árboles utilizando:</p>
+<ol type="1">
+<li><strong>Bagging (Bootstrap Aggregating)</strong>: Cada árbol se entrena con una muestra bootstrap del conjunto de datos</li>
+<li><strong>Selección aleatoria de features</strong>: En cada split, solo se considera un subconjunto aleatorio de variables</li>
+</ol>
+<p>Para clasificación, la predicción final se obtiene por <strong>votación mayoritaria</strong>:</p>
+<p><span class="math display">\[
+\hat{y} = \text{mode}\{\hat{y}_1, \hat{y}_2, ..., \hat{y}_B\}
+\]</span></p>
+<p>Donde <span class="math inline">\(B\)</span> es el número de árboles.</p>
+<section id="importancia-de-variables-gini-importance" class="level3" data-number="7.1.1">
+<h3 data-number="7.1.1" class="anchored" data-anchor-id="importancia-de-variables-gini-importance"><span class="header-section-number">7.1.1</span> Importancia de Variables (Gini Importance)</h3>
+<p>La importancia de una variable se mide como la reducción promedio de la impureza de Gini:</p>
+<p><span class="math display">\[
+\text{Gini}(t) = 1 - \sum_{k=1}^{K} p_{tk}^2
+\]</span></p>
+<p>Donde <span class="math inline">\(p_{tk}\)</span> es la proporción de observaciones de clase <span class="math inline">\(k\)</span> en el nodo <span class="math inline">\(t\)</span>.</p>
+</section>
+</section>
+<section id="hiperparámetros" class="level2" data-number="7.2">
+<h2 data-number="7.2" class="anchored" data-anchor-id="hiperparámetros"><span class="header-section-number">7.2</span> Hiperparámetros</h2>
+<p>Se entrenaron tres versiones del modelo Random Forest:</p>
+<div class="cell" data-execution_count="19">
+<div id="tbl-hiperparametros-rf" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="19">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-hiperparametros-rf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;8: Configuración de hiperparámetros - Random Forest
+</figcaption>
+<div aria-describedby="tbl-hiperparametros-rf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display">
+<style type="text/css">
+</style>
+
+<table id="T_c616d" class="do-not-create-environment cell caption-top table table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th id="T_c616d_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">Parámetro</th>
+<th id="T_c616d_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">RF1 (39 vars)</th>
+<th id="T_c616d_level0_col2" class="col_heading level0 col2" data-quarto-table-cell-role="th">RF2 (24 vars)</th>
+<th id="T_c616d_level0_col3" class="col_heading level0 col3" data-quarto-table-cell-role="th">RF3 (Optimizado)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td id="T_c616d_row0_col0" class="data row0 col0">n_estimators</td>
+<td id="T_c616d_row0_col1" class="data row0 col1">100</td>
+<td id="T_c616d_row0_col2" class="data row0 col2">100</td>
+<td id="T_c616d_row0_col3" class="data row0 col3">200</td>
+</tr>
+<tr class="even">
+<td id="T_c616d_row1_col0" class="data row1 col0">max_depth</td>
+<td id="T_c616d_row1_col1" class="data row1 col1">15</td>
+<td id="T_c616d_row1_col2" class="data row1 col2">15</td>
+<td id="T_c616d_row1_col3" class="data row1 col3">None</td>
+</tr>
+<tr class="odd">
+<td id="T_c616d_row2_col0" class="data row2 col0">min_samples_split</td>
+<td id="T_c616d_row2_col1" class="data row2 col1">10</td>
+<td id="T_c616d_row2_col2" class="data row2 col2">10</td>
+<td id="T_c616d_row2_col3" class="data row2 col3">30</td>
+</tr>
+<tr class="even">
+<td id="T_c616d_row3_col0" class="data row3 col0">min_samples_leaf</td>
+<td id="T_c616d_row3_col1" class="data row3 col1">5</td>
+<td id="T_c616d_row3_col2" class="data row3 col2">5</td>
+<td id="T_c616d_row3_col3" class="data row3 col3">5</td>
+</tr>
+<tr class="odd">
+<td id="T_c616d_row4_col0" class="data row4 col0">max_features</td>
+<td id="T_c616d_row4_col1" class="data row4 col1">auto</td>
+<td id="T_c616d_row4_col2" class="data row4 col2">auto</td>
+<td id="T_c616d_row4_col3" class="data row4 col3">sqrt</td>
+</tr>
+<tr class="even">
+<td id="T_c616d_row5_col0" class="data row5 col0">criterion</td>
+<td id="T_c616d_row5_col1" class="data row5 col1">gini</td>
+<td id="T_c616d_row5_col2" class="data row5 col2">gini</td>
+<td id="T_c616d_row5_col3" class="data row5 col3">entropy</td>
+</tr>
+<tr class="odd">
+<td id="T_c616d_row6_col0" class="data row6 col0">class_weight</td>
+<td id="T_c616d_row6_col1" class="data row6 col1">balanced</td>
+<td id="T_c616d_row6_col2" class="data row6 col2">balanced</td>
+<td id="T_c616d_row6_col3" class="data row6 col3">balanced</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+</section>
+<section id="resultados" class="level2" data-number="7.3">
+<h2 data-number="7.3" class="anchored" data-anchor-id="resultados"><span class="header-section-number">7.3</span> Resultados</h2>
+<div class="cell" data-execution_count="20">
+<div id="tbl-resultados-rf" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="20">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-resultados-rf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;9: Comparación de modelos Random Forest
+</figcaption>
+<div aria-describedby="tbl-resultados-rf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display">
+<style type="text/css">
+</style>
+
+<table id="T_b9585" class="do-not-create-environment cell caption-top table table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th id="T_b9585_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">Métrica</th>
+<th id="T_b9585_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">RF1 (39 vars)</th>
+<th id="T_b9585_level0_col2" class="col_heading level0 col2" data-quarto-table-cell-role="th">RF2 (24 vars)</th>
+<th id="T_b9585_level0_col3" class="col_heading level0 col3" data-quarto-table-cell-role="th">RF3 (Optimizado)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td id="T_b9585_row0_col0" class="data row0 col0">ROC-AUC (Test)</td>
+<td id="T_b9585_row0_col1" class="data row0 col1">0.7451</td>
+<td id="T_b9585_row0_col2" class="data row0 col2">0.7407</td>
+<td id="T_b9585_row0_col3" class="data row0 col3">0.7482</td>
+</tr>
+<tr class="even">
+<td id="T_b9585_row1_col0" class="data row1 col0">Average Precision (Test)</td>
+<td id="T_b9585_row1_col1" class="data row1 col1">0.2207</td>
+<td id="T_b9585_row1_col2" class="data row1 col2">0.2133</td>
+<td id="T_b9585_row1_col3" class="data row1 col3">0.2281</td>
+</tr>
+<tr class="odd">
+<td id="T_b9585_row2_col0" class="data row2 col0">ROC-AUC (Train)</td>
+<td id="T_b9585_row2_col1" class="data row2 col1">0.9222</td>
+<td id="T_b9585_row2_col2" class="data row2 col2">0.9038</td>
+<td id="T_b9585_row2_col3" class="data row2 col3">0.9905</td>
+</tr>
+<tr class="even">
+<td id="T_b9585_row3_col0" class="data row3 col0">Overfitting (Gap)</td>
+<td id="T_b9585_row3_col1" class="data row3 col1">0.1771</td>
+<td id="T_b9585_row3_col2" class="data row3 col2">0.1631</td>
+<td id="T_b9585_row3_col3" class="data row3 col3">0.2423</td>
+</tr>
+<tr class="odd">
+<td id="T_b9585_row4_col0" class="data row4 col0">Recall (Default)</td>
+<td id="T_b9585_row4_col1" class="data row4 col1">0.4400</td>
+<td id="T_b9585_row4_col2" class="data row4 col2">0.4600</td>
+<td id="T_b9585_row4_col3" class="data row4 col3">0.2400</td>
+</tr>
+<tr class="even">
+<td id="T_b9585_row5_col0" class="data row5 col0">Precision (Default)</td>
+<td id="T_b9585_row5_col1" class="data row5 col1">0.2100</td>
+<td id="T_b9585_row5_col2" class="data row5 col2">0.2000</td>
+<td id="T_b9585_row5_col3" class="data row5 col3">0.2900</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<p><strong>Análisis de resultados:</strong></p>
+<ol type="1">
+<li><strong>RF1 vs RF2</strong>: Eliminar 15 variables redundantes causa una pérdida mínima de AUC (0.0044), validando nuestra selección de variables</li>
+<li><strong>RF3 (Optimizado)</strong>: La búsqueda de hiperparámetros mejora el AUC en test (+0.0074) pero aumenta el overfitting</li>
+<li><strong>Trade-off Recall vs Precision</strong>: RF3 tiene mayor precisión (29% vs 21%) pero menor recall (24% vs 44%)</li>
+</ol>
+<section id="importancia-de-variables-1" class="level3" data-number="7.3.1">
+<h3 data-number="7.3.1" class="anchored" data-anchor-id="importancia-de-variables-1"><span class="header-section-number">7.3.1</span> Importancia de Variables</h3>
+<div id="cell-fig-importancia-rf" class="cell" data-execution_count="21">
+<div class="cell-output cell-output-display">
+<div id="fig-importancia-rf" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-importancia-rf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="reporte-completo_files/figure-html/fig-importancia-rf-output-1.png" width="950" height="754" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-importancia-rf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;8: Importancia de variables en Random Forest (Gini Importance)
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>Hallazgo clave</strong>: <code>SCORE_PROMEDIO</code> domina la importancia con 32.1%, más del triple que la segunda variable más importante. Esto confirma que los scores externos son el factor más determinante para predecir el riesgo de impago.</p>
+</section>
+</section>
+</section>
+<section id="xgboost" class="level1" data-number="8">
+<h1 data-number="8"><span class="header-section-number">8</span> XGBoost</h1>
+<section id="descripción-del-modelo-1" class="level2" data-number="8.1">
+<h2 data-number="8.1" class="anchored" data-anchor-id="descripción-del-modelo-1"><span class="header-section-number">8.1</span> Descripción del Modelo</h2>
+<p><strong>XGBoost</strong> (Extreme Gradient Boosting) es un algoritmo de <strong>boosting</strong> que construye árboles de decisión de manera secuencial. A diferencia de Random Forest que construye árboles en paralelo, XGBoost:</p>
+<ol type="1">
+<li><strong>Entrena árboles secuencialmente</strong>: Cada árbol corrige los errores del anterior</li>
+<li><strong>Utiliza gradient boosting</strong>: Optimiza una función de pérdida usando gradiente descendente</li>
+<li><strong>Incluye regularización</strong>: Penaliza la complejidad del modelo para prevenir overfitting</li>
+</ol>
+<section id="mecanismo-de-boosting" class="level3" data-number="8.1.1">
+<h3 data-number="8.1.1" class="anchored" data-anchor-id="mecanismo-de-boosting"><span class="header-section-number">8.1.1</span> Mecanismo de Boosting</h3>
+<p>El modelo final es una suma ponderada de árboles:</p>
+<p><span class="math display">\[
+\hat{y}_i = \sum_{k=1}^{K} f_k(x_i)
+\]</span></p>
+<p>Donde cada árbol <span class="math inline">\(f_k\)</span> se entrena para minimizar:</p>
+<p><span class="math display">\[
+\mathcal{L}^{(k)} = \sum_{i=1}^{n} l(y_i, \hat{y}_i^{(k-1)} + f_k(x_i)) + \Omega(f_k)
+\]</span></p>
+<p>La regularización <span class="math inline">\(\Omega(f_k)\)</span> incluye: - <strong>L1 (alpha)</strong>: Regularización de pesos - <strong>L2 (lambda)</strong>: Regularización de scores de hojas - <strong>gamma</strong>: Penalización por complejidad del árbol</p>
+</section>
+<section id="learning-rate-η" class="level3" data-number="8.1.2">
+<h3 data-number="8.1.2" class="anchored" data-anchor-id="learning-rate-η"><span class="header-section-number">8.1.2</span> Learning Rate (η)</h3>
+<p>El learning rate controla la contribución de cada árbol:</p>
+<p><span class="math display">\[
+\hat{y}_i^{(k)} = \hat{y}_i^{(k-1)} + \eta \cdot f_k(x_i)
+\]</span></p>
+<ul>
+<li><strong>η pequeño</strong> (0.01-0.1): Aprendizaje más lento pero mejor generalización</li>
+<li><strong>η grande</strong> (0.1-0.3): Aprendizaje más rápido pero riesgo de overfitting</li>
+</ul>
+</section>
+</section>
+<section id="hiperparámetros-1" class="level2" data-number="8.2">
+<h2 data-number="8.2" class="anchored" data-anchor-id="hiperparámetros-1"><span class="header-section-number">8.2</span> Hiperparámetros</h2>
+<div class="cell" data-execution_count="22">
+<div id="tbl-hiperparametros-xgb" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="22">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-hiperparametros-xgb-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;10: Configuración de hiperparámetros - XGBoost
+</figcaption>
+<div aria-describedby="tbl-hiperparametros-xgb-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display">
+<style type="text/css">
+</style>
+
+<table id="T_fd2e7" class="do-not-create-environment cell caption-top table table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th id="T_fd2e7_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">Parámetro</th>
+<th id="T_fd2e7_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">XGB1 (39 vars)</th>
+<th id="T_fd2e7_level0_col2" class="col_heading level0 col2" data-quarto-table-cell-role="th">XGB2 (24 vars)</th>
+<th id="T_fd2e7_level0_col3" class="col_heading level0 col3" data-quarto-table-cell-role="th">Descripción</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td id="T_fd2e7_row0_col0" class="data row0 col0">n_estimators</td>
+<td id="T_fd2e7_row0_col1" class="data row0 col1">100</td>
+<td id="T_fd2e7_row0_col2" class="data row0 col2">100</td>
+<td id="T_fd2e7_row0_col3" class="data row0 col3">Número de árboles</td>
+</tr>
+<tr class="even">
+<td id="T_fd2e7_row1_col0" class="data row1 col0">max_depth</td>
+<td id="T_fd2e7_row1_col1" class="data row1 col1">6</td>
+<td id="T_fd2e7_row1_col2" class="data row1 col2">6</td>
+<td id="T_fd2e7_row1_col3" class="data row1 col3">Profundidad máxima por árbol</td>
+</tr>
+<tr class="odd">
+<td id="T_fd2e7_row2_col0" class="data row2 col0">learning_rate</td>
+<td id="T_fd2e7_row2_col1" class="data row2 col1">0.100000</td>
+<td id="T_fd2e7_row2_col2" class="data row2 col2">0.100000</td>
+<td id="T_fd2e7_row2_col3" class="data row2 col3">Tasa de aprendizaje</td>
+</tr>
+<tr class="even">
+<td id="T_fd2e7_row3_col0" class="data row3 col0">min_child_weight</td>
+<td id="T_fd2e7_row3_col1" class="data row3 col1">5</td>
+<td id="T_fd2e7_row3_col2" class="data row3 col2">5</td>
+<td id="T_fd2e7_row3_col3" class="data row3 col3">Suma mínima de pesos en hoja</td>
+</tr>
+<tr class="odd">
+<td id="T_fd2e7_row4_col0" class="data row4 col0">subsample</td>
+<td id="T_fd2e7_row4_col1" class="data row4 col1">0.800000</td>
+<td id="T_fd2e7_row4_col2" class="data row4 col2">0.800000</td>
+<td id="T_fd2e7_row4_col3" class="data row4 col3">Fracción de muestras por árbol</td>
+</tr>
+<tr class="even">
+<td id="T_fd2e7_row5_col0" class="data row5 col0">colsample_bytree</td>
+<td id="T_fd2e7_row5_col1" class="data row5 col1">0.800000</td>
+<td id="T_fd2e7_row5_col2" class="data row5 col2">0.800000</td>
+<td id="T_fd2e7_row5_col3" class="data row5 col3">Fracción de features por árbol</td>
+</tr>
+<tr class="odd">
+<td id="T_fd2e7_row6_col0" class="data row6 col0">scale_pos_weight</td>
+<td id="T_fd2e7_row6_col1" class="data row6 col1">11.380000</td>
+<td id="T_fd2e7_row6_col2" class="data row6 col2">11.380000</td>
+<td id="T_fd2e7_row6_col3" class="data row6 col3">Ratio para balanceo de clases</td>
+</tr>
+<tr class="even">
+<td id="T_fd2e7_row7_col0" class="data row7 col0">eval_metric</td>
+<td id="T_fd2e7_row7_col1" class="data row7 col1">auc</td>
+<td id="T_fd2e7_row7_col2" class="data row7 col2">auc</td>
+<td id="T_fd2e7_row7_col3" class="data row7 col3">Métrica de evaluación</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+</section>
+<section id="resultados-1" class="level2" data-number="8.3">
+<h2 data-number="8.3" class="anchored" data-anchor-id="resultados-1"><span class="header-section-number">8.3</span> Resultados</h2>
+<div class="cell" data-execution_count="23">
+<div id="tbl-resultados-xgb" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="23">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-resultados-xgb-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;11: Resultados de modelos XGBoost
+</figcaption>
+<div aria-describedby="tbl-resultados-xgb-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display">
+<style type="text/css">
+</style>
+
+<table id="T_1601a" class="do-not-create-environment cell caption-top table table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th id="T_1601a_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">Métrica</th>
+<th id="T_1601a_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">XGB1 (39 vars)</th>
+<th id="T_1601a_level0_col2" class="col_heading level0 col2" data-quarto-table-cell-role="th">XGB2 (24 vars)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td id="T_1601a_row0_col0" class="data row0 col0">ROC-AUC (Test)</td>
+<td id="T_1601a_row0_col1" class="data row0 col1">0.7612</td>
+<td id="T_1601a_row0_col2" class="data row0 col2">0.7589</td>
+</tr>
+<tr class="even">
+<td id="T_1601a_row1_col0" class="data row1 col0">Average Precision (Test)</td>
+<td id="T_1601a_row1_col1" class="data row1 col1">0.2389</td>
+<td id="T_1601a_row1_col2" class="data row1 col2">0.2341</td>
+</tr>
+<tr class="odd">
+<td id="T_1601a_row2_col0" class="data row2 col0">ROC-AUC (Train)</td>
+<td id="T_1601a_row2_col1" class="data row2 col1">0.7845</td>
+<td id="T_1601a_row2_col2" class="data row2 col2">0.7798</td>
+</tr>
+<tr class="even">
+<td id="T_1601a_row3_col0" class="data row3 col0">Overfitting (Gap)</td>
+<td id="T_1601a_row3_col1" class="data row3 col1">0.0233</td>
+<td id="T_1601a_row3_col2" class="data row3 col2">0.0209</td>
+</tr>
+<tr class="odd">
+<td id="T_1601a_row4_col0" class="data row4 col0">Recall (Default)</td>
+<td id="T_1601a_row4_col1" class="data row4 col1">0.5200</td>
+<td id="T_1601a_row4_col2" class="data row4 col2">0.5100</td>
+</tr>
+<tr class="even">
+<td id="T_1601a_row5_col0" class="data row5 col0">Precision (Default)</td>
+<td id="T_1601a_row5_col1" class="data row5 col1">0.2300</td>
+<td id="T_1601a_row5_col2" class="data row5 col2">0.2200</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<section id="importancia-de-variables-2" class="level3" data-number="8.3.1">
+<h3 data-number="8.3.1" class="anchored" data-anchor-id="importancia-de-variables-2"><span class="header-section-number">8.3.1</span> Importancia de Variables</h3>
+<div id="cell-fig-importancia-xgb" class="cell" data-execution_count="24">
+<div class="cell-output cell-output-display">
+<div id="fig-importancia-xgb" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-importancia-xgb-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="reporte-completo_files/figure-html/fig-importancia-xgb-output-1.png" width="950" height="754" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-importancia-xgb-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;9: Importancia de variables en XGBoost (Gain)
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+</section>
+<section id="comparación-de-modelos" class="level1" data-number="9">
+<h1 data-number="9"><span class="header-section-number">9</span> Comparación de Modelos</h1>
+<section id="métricas-globales" class="level2" data-number="9.1">
+<h2 data-number="9.1" class="anchored" data-anchor-id="métricas-globales"><span class="header-section-number">9.1</span> Métricas Globales</h2>
+<div class="cell" data-execution_count="25">
+<div id="tbl-comparacion-final" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="25">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-comparacion-final-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;12: Resumen comparativo de todos los modelos
+</figcaption>
+<div aria-describedby="tbl-comparacion-final-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display">
+<style type="text/css">
+</style>
+
+<table id="T_b61b0" class="do-not-create-environment cell caption-top table table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th id="T_b61b0_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">Métrica</th>
+<th id="T_b61b0_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">Regresión Logística</th>
+<th id="T_b61b0_level0_col2" class="col_heading level0 col2" data-quarto-table-cell-role="th">Random Forest</th>
+<th id="T_b61b0_level0_col3" class="col_heading level0 col3" data-quarto-table-cell-role="th">XGBoost</th>
+<th id="T_b61b0_level0_col4" class="col_heading level0 col4" data-quarto-table-cell-role="th">Mejor</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td id="T_b61b0_row0_col0" class="data row0 col0">ROC-AUC (Test)</td>
+<td id="T_b61b0_row0_col1" class="data row0 col1">0.7335</td>
+<td id="T_b61b0_row0_col2" class="data row0 col2">0.7482</td>
+<td id="T_b61b0_row0_col3" class="data row0 col3">0.7612</td>
+<td id="T_b61b0_row0_col4" class="data row0 col4">XGBoost</td>
+</tr>
+<tr class="even">
+<td id="T_b61b0_row1_col0" class="data row1 col0">Average Precision</td>
+<td id="T_b61b0_row1_col1" class="data row1 col1">0.2112</td>
+<td id="T_b61b0_row1_col2" class="data row1 col2">0.2281</td>
+<td id="T_b61b0_row1_col3" class="data row1 col3">0.2389</td>
+<td id="T_b61b0_row1_col4" class="data row1 col4">XGBoost</td>
+</tr>
+<tr class="odd">
+<td id="T_b61b0_row2_col0" class="data row2 col0">Recall (Default)</td>
+<td id="T_b61b0_row2_col1" class="data row2 col1">66%</td>
+<td id="T_b61b0_row2_col2" class="data row2 col2">24-46%</td>
+<td id="T_b61b0_row2_col3" class="data row2 col3">51-52%</td>
+<td id="T_b61b0_row2_col4" class="data row2 col4">LogReg</td>
+</tr>
+<tr class="even">
+<td id="T_b61b0_row3_col0" class="data row3 col0">Precision (Default)</td>
+<td id="T_b61b0_row3_col1" class="data row3 col1">15%</td>
+<td id="T_b61b0_row3_col2" class="data row3 col2">20-29%</td>
+<td id="T_b61b0_row3_col3" class="data row3 col3">22-23%</td>
+<td id="T_b61b0_row3_col4" class="data row3 col4">RF</td>
+</tr>
+<tr class="odd">
+<td id="T_b61b0_row4_col0" class="data row4 col0">Overfitting (Gap)</td>
+<td id="T_b61b0_row4_col1" class="data row4 col1">0.0012</td>
+<td id="T_b61b0_row4_col2" class="data row4 col2">0.1631-0.2423</td>
+<td id="T_b61b0_row4_col3" class="data row4 col3">0.0209-0.0233</td>
+<td id="T_b61b0_row4_col4" class="data row4 col4">LogReg</td>
+</tr>
+<tr class="even">
+<td id="T_b61b0_row5_col0" class="data row5 col0">Interpretabilidad</td>
+<td id="T_b61b0_row5_col1" class="data row5 col1">Alta</td>
+<td id="T_b61b0_row5_col2" class="data row5 col2">Media</td>
+<td id="T_b61b0_row5_col3" class="data row5 col3">Baja</td>
+<td id="T_b61b0_row5_col4" class="data row5 col4">LogReg</td>
+</tr>
+<tr class="odd">
+<td id="T_b61b0_row6_col0" class="data row6 col0">Tiempo de entrenamiento</td>
+<td id="T_b61b0_row6_col1" class="data row6 col1">Rápido</td>
+<td id="T_b61b0_row6_col2" class="data row6 col2">Moderado</td>
+<td id="T_b61b0_row6_col3" class="data row6 col3">Moderado</td>
+<td id="T_b61b0_row6_col4" class="data row6 col4">LogReg</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+</section>
+<section id="curvas-roc" class="level2" data-number="9.2">
+<h2 data-number="9.2" class="anchored" data-anchor-id="curvas-roc"><span class="header-section-number">9.2</span> Curvas ROC</h2>
+<div id="cell-fig-roc-comparison" class="cell" data-execution_count="26">
+<div class="cell-output cell-output-display">
+<div id="fig-roc-comparison" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-roc-comparison-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="reporte-completo_files/figure-html/fig-roc-comparison-output-1.png" width="1332" height="469" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-roc-comparison-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;10: Comparación de curvas ROC entre modelos
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="comparación-de-feature-importance" class="level2" data-number="9.3">
+<h2 data-number="9.3" class="anchored" data-anchor-id="comparación-de-feature-importance"><span class="header-section-number">9.3</span> Comparación de Feature Importance</h2>
+<div id="cell-fig-feature-importance-comparison" class="cell" data-execution_count="27">
+<div class="cell-output cell-output-display">
+<div id="fig-feature-importance-comparison" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-feature-importance-comparison-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="reporte-completo_files/figure-html/fig-feature-importance-comparison-output-1.png" width="1331" height="659" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-feature-importance-comparison-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;11: Comparación de importancia de variables entre modelos
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="matrices-de-confusión" class="level2" data-number="9.4">
+<h2 data-number="9.4" class="anchored" data-anchor-id="matrices-de-confusión"><span class="header-section-number">9.4</span> Matrices de Confusión</h2>
+<div id="cell-fig-confusion-matrices" class="cell" data-execution_count="28">
+<div class="cell-output cell-output-display">
+<div id="fig-confusion-matrices" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-confusion-matrices-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="reporte-completo_files/figure-html/fig-confusion-matrices-output-1.png" width="1511" height="467" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-confusion-matrices-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;12: Matrices de confusión de los tres modelos (Test Set)
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="conclusión-general" class="level1" data-number="10">
+<h1 data-number="10"><span class="header-section-number">10</span> Conclusión General</h1>
+<section id="hallazgos-principales" class="level2" data-number="10.1">
+<h2 data-number="10.1" class="anchored" data-anchor-id="hallazgos-principales"><span class="header-section-number">10.1</span> Hallazgos Principales</h2>
+<section id="el-score-crediticio-es-el-predictor-dominante" class="level3" data-number="10.1.1">
+<h3 data-number="10.1.1" class="anchored" data-anchor-id="el-score-crediticio-es-el-predictor-dominante"><span class="header-section-number">10.1.1</span> 1. El Score Crediticio es el Predictor Dominante</h3>
+<p>En los tres modelos, <code>SCORE_PROMEDIO</code> emerge como la variable más importante: - <strong>Regresión Logística</strong>: Coeficiente más alto (β = -1.23) - <strong>Random Forest</strong>: 32.1% de la importancia total - <strong>XGBoost</strong>: 18.3% de la importancia (Gain)</p>
+<p>Esto confirma que los scores de fuentes externas capturan información valiosa sobre el riesgo crediticio.</p>
+</section>
+<section id="xgboost-ofrece-el-mejor-rendimiento" class="level3" data-number="10.1.2">
+<h3 data-number="10.1.2" class="anchored" data-anchor-id="xgboost-ofrece-el-mejor-rendimiento"><span class="header-section-number">10.1.2</span> 2. XGBoost Ofrece el Mejor Rendimiento</h3>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Modelo</th>
+<th>ROC-AUC</th>
+<th>Average Precision</th>
+<th>Overfitting</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Regresión Logística</td>
+<td>0.7335</td>
+<td>0.2112</td>
+<td>Bajo (0.12%)</td>
+</tr>
+<tr class="even">
+<td>Random Forest</td>
+<td>0.7482</td>
+<td>0.2281</td>
+<td>Alto (16-24%)</td>
+</tr>
+<tr class="odd">
+<td><strong>XGBoost</strong></td>
+<td><strong>0.7612</strong></td>
+<td><strong>0.2389</strong></td>
+<td><strong>Bajo (2%)</strong></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="trade-off-entre-interpretabilidad-y-rendimiento" class="level3" data-number="10.1.3">
+<h3 data-number="10.1.3" class="anchored" data-anchor-id="trade-off-entre-interpretabilidad-y-rendimiento"><span class="header-section-number">10.1.3</span> 3. Trade-off entre Interpretabilidad y Rendimiento</h3>
+<ul>
+<li><strong>Regresión Logística</strong>: Mayor interpretabilidad (coeficientes directos), menor rendimiento</li>
+<li><strong>XGBoost</strong>: Mejor rendimiento, pero menor interpretabilidad</li>
+<li><strong>Random Forest</strong>: Balance intermedio, pero con mayor overfitting</li>
+</ul>
+</section>
+</section>
+<section id="ventajas-y-desventajas-de-cada-modelo" class="level2" data-number="10.2">
+<h2 data-number="10.2" class="anchored" data-anchor-id="ventajas-y-desventajas-de-cada-modelo"><span class="header-section-number">10.2</span> Ventajas y Desventajas de Cada Modelo</h2>
+<div class="cell" data-execution_count="29">
+<div id="tbl-ventajas-desventajas" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="29">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-ventajas-desventajas-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;13: Resumen de ventajas y desventajas por modelo
+</figcaption>
+<div aria-describedby="tbl-ventajas-desventajas-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display">
+<style type="text/css">
+</style>
+
+<table id="T_b3756" class="do-not-create-environment cell caption-top table table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th id="T_b3756_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">Modelo</th>
+<th id="T_b3756_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">Ventajas</th>
+<th id="T_b3756_level0_col2" class="col_heading level0 col2" data-quarto-table-cell-role="th">Desventajas</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td id="T_b3756_row0_col0" class="data row0 col0">Regresión Logística</td>
+<td id="T_b3756_row0_col1" class="data row0 col1">• Alta interpretabilidad • Sin overfitting • Rápido entrenamiento • Coeficientes interpretables</td>
+<td id="T_b3756_row0_col2" class="data row0 col2">• Asume linealidad • Menor AUC • No captura interacciones</td>
+</tr>
+<tr class="even">
+<td id="T_b3756_row1_col0" class="data row1 col0">Random Forest</td>
+<td id="T_b3756_row1_col1" class="data row1 col1">• Captura interacciones • Robusto a outliers • Feature importance • No requiere normalización</td>
+<td id="T_b3756_row1_col2" class="data row1 col2">• Alto overfitting • Caja negra • Mayor tiempo de entrenamiento</td>
+</tr>
+<tr class="odd">
+<td id="T_b3756_row2_col0" class="data row2 col0">XGBoost</td>
+<td id="T_b3756_row2_col1" class="data row2 col1">• Mejor AUC • Bajo overfitting • Maneja desbalance • Regularización integrada</td>
+<td id="T_b3756_row2_col2" class="data row2 col2">• Caja negra • Requiere tuning • Mayor complejidad computacional</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+</section>
+<section id="recomendación-final" class="level2" data-number="10.3">
+<h2 data-number="10.3" class="anchored" data-anchor-id="recomendación-final"><span class="header-section-number">10.3</span> Recomendación Final</h2>
+<section id="para-producción" class="level3" data-number="10.3.1">
+<h3 data-number="10.3.1" class="anchored" data-anchor-id="para-producción"><span class="header-section-number">10.3.1</span> Para Producción</h3>
+<p>Recomendamos implementar <strong>XGBoost</strong> como modelo principal por:</p>
+<ol type="1">
+<li><strong>Mejor rendimiento predictivo</strong> (AUC = 0.76)</li>
+<li><strong>Buen balance recall-precision</strong> (51% recall, 23% precision)</li>
+<li><strong>Bajo overfitting</strong> (gap &lt; 3%)</li>
+<li><strong>Robustez ante desbalance de clases</strong></li>
+</ol>
+</section>
+<section id="para-monitoreo" class="level3" data-number="10.3.2">
+<h3 data-number="10.3.2" class="anchored" data-anchor-id="para-monitoreo"><span class="header-section-number">10.3.2</span> Para Monitoreo</h3>
+<ul>
+<li>Establecer un umbral de probabilidad de <strong>0.3</strong> para maximizar el recall</li>
+<li>Implementar <strong>alertas para scores &gt; 0.5</strong> como alto riesgo</li>
+<li>Monitorear la distribución de probabilidades para detectar drift</li>
+</ul>
+</section>
+<section id="para-mejora-futura" class="level3" data-number="10.3.3">
+<h3 data-number="10.3.3" class="anchored" data-anchor-id="para-mejora-futura"><span class="header-section-number">10.3.3</span> Para Mejora Futura</h3>
+<ol type="1">
+<li><strong>Investigar el contenido de los scores externos</strong> (EXT_SOURCE_1/2/3)</li>
+<li><strong>Incorporar datos dinámicos</strong> de comportamiento de pago</li>
+<li><strong>Implementar SHAP values</strong> para explicabilidad del modelo XGBoost</li>
+<li><strong>Desarrollar modelo de scoring dinámico</strong> que actualice predicciones con datos de comportamiento</li>
+<li><strong>Análisis de fairness</strong> para asegurar que el modelo no discrimine por características protegidas</li>
+</ol>
+</section>
+</section>
+<section id="validación-de-hipótesis" class="level2" data-number="10.4">
+<h2 data-number="10.4" class="anchored" data-anchor-id="validación-de-hipótesis"><span class="header-section-number">10.4</span> Validación de Hipótesis</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 34%">
+<col style="width: 34%">
+<col style="width: 31%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Hipótesis</th>
+<th>Resultado</th>
+<th>Evidencia</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Menor score crediticio → Mayor riesgo</td>
+<td>✓ Confirmada</td>
+<td>Correlación más fuerte (-0.22), variable #1 en todos los modelos</td>
+</tr>
+<tr class="even">
+<td>Menor edad → Mayor riesgo</td>
+<td>✓ Confirmada</td>
+<td>Correlación -0.078, diferencia significativa en perfiles</td>
+</tr>
+<tr class="odd">
+<td>Mayor historial de mora → Mayor riesgo</td>
+<td>✓ Confirmada</td>
+<td>PCT_MESES_MORA +73% en defaults</td>
+</tr>
+<tr class="even">
+<td>Más créditos activos → Mayor riesgo</td>
+<td>✓ Confirmada</td>
+<td>Correlación +0.044, coeficiente positivo en LR</td>
+</tr>
+<tr class="odd">
+<td>Menos activos → Mayor riesgo</td>
+<td>✓ Parcialmente</td>
+<td>NUM_ACTIVOS -4.7% en defaults, efecto moderado</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="referencias" class="level1" data-number="11">
+<h1 data-number="11"><span class="header-section-number">11</span> Referencias</h1>
+<ol type="1">
+<li><p>Home Credit Group. (2018). <em>Home Credit Default Risk</em>. Kaggle Competition. https://www.kaggle.com/competitions/home-credit-default-risk</p></li>
+<li><p>Breiman, L. (2001). Random Forests. <em>Machine Learning</em>, 45(1), 5-32.</p></li>
+<li><p>Chen, T., &amp; Guestrin, C. (2016). XGBoost: A Scalable Tree Boosting System. <em>Proceedings of the 22nd ACM SIGKDD</em>.</p></li>
+<li><p>Hosmer, D. W., Lemeshow, S., &amp; Sturdivant, R. X. (2013). <em>Applied Logistic Regression</em> (3rd ed.). Wiley.</p></li>
+<li><p>James, G., Witten, D., Hastie, T., &amp; Tibshirani, R. (2021). <em>An Introduction to Statistical Learning</em> (2nd ed.). Springer.</p></li>
+<li><p>Battagliola, M. L. (2025). <em>Guía para la Elaboración del Proyecto Final</em>. ITAM - Estadística Aplicada III.</p></li>
+</ol>
+</section>
+<section id="anexos" class="level1" data-number="12">
+<h1 data-number="12"><span class="header-section-number">12</span> Anexos</h1>
+<section id="a.-diccionario-de-variables" class="level2" data-number="12.1">
+<h2 data-number="12.1" class="anchored" data-anchor-id="a.-diccionario-de-variables"><span class="header-section-number">12.1</span> A. Diccionario de Variables</h2>
+<div class="cell" data-execution_count="30">
+<div id="tbl-diccionario" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="30">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-diccionario-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;14: Diccionario completo de variables
+</figcaption>
+<div aria-describedby="tbl-diccionario-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display">
+<style type="text/css">
+</style>
+
+<table id="T_5110e" class="do-not-create-environment cell caption-top table table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th id="T_5110e_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">Variable</th>
+<th id="T_5110e_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">Descripción</th>
+<th id="T_5110e_level0_col2" class="col_heading level0 col2" data-quarto-table-cell-role="th">Tipo</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td id="T_5110e_row0_col0" class="data row0 col0">TARGET</td>
+<td id="T_5110e_row0_col1" class="data row0 col1">Variable objetivo (1=Default, 0=No Default)</td>
+<td id="T_5110e_row0_col2" class="data row0 col2">Binaria</td>
+</tr>
+<tr class="even">
+<td id="T_5110e_row1_col0" class="data row1 col0">SCORE_PROMEDIO</td>
+<td id="T_5110e_row1_col1" class="data row1 col1">Promedio de scores externos EXT_SOURCE_1/2/3</td>
+<td id="T_5110e_row1_col2" class="data row1 col2">Continua [0,1]</td>
+</tr>
+<tr class="odd">
+<td id="T_5110e_row2_col0" class="data row2 col0">EDAD_ANOS</td>
+<td id="T_5110e_row2_col1" class="data row2 col1">Edad del solicitante en años</td>
+<td id="T_5110e_row2_col2" class="data row2 col2">Continua</td>
+</tr>
+<tr class="even">
+<td id="T_5110e_row3_col0" class="data row3 col0">CREDIT_INCOME_RATIO</td>
+<td id="T_5110e_row3_col1" class="data row3 col1">Ratio crédito solicitado / ingreso total</td>
+<td id="T_5110e_row3_col2" class="data row3 col2">Continua</td>
+</tr>
+<tr class="odd">
+<td id="T_5110e_row4_col0" class="data row4 col0">INGRESO_PER_CAPITA</td>
+<td id="T_5110e_row4_col1" class="data row4 col1">Ingreso total / miembros de familia</td>
+<td id="T_5110e_row4_col2" class="data row4 col2">Continua</td>
+</tr>
+<tr class="even">
+<td id="T_5110e_row5_col0" class="data row5 col0">NUM_ACTIVOS</td>
+<td id="T_5110e_row5_col1" class="data row5 col1">Suma de activos (auto + inmueble)</td>
+<td id="T_5110e_row5_col2" class="data row5 col2">Discreta [0,2]</td>
+</tr>
+<tr class="odd">
+<td id="T_5110e_row6_col0" class="data row6 col0">CREDITOS_ACTIVOS</td>
+<td id="T_5110e_row6_col1" class="data row6 col1">Número de créditos activos en buró</td>
+<td id="T_5110e_row6_col2" class="data row6 col2">Discreta</td>
+</tr>
+<tr class="even">
+<td id="T_5110e_row7_col0" class="data row7 col0">CREDITOS_CERRADOS</td>
+<td id="T_5110e_row7_col1" class="data row7 col1">Número de créditos cerrados en buró</td>
+<td id="T_5110e_row7_col2" class="data row7 col2">Discreta</td>
+</tr>
+<tr class="odd">
+<td id="T_5110e_row8_col0" class="data row8 col0">PCT_MESES_MORA</td>
+<td id="T_5110e_row8_col1" class="data row8 col1">Porcentaje histórico de meses con mora</td>
+<td id="T_5110e_row8_col2" class="data row8 col2">Continua [0,100]</td>
+</tr>
+<tr class="even">
+<td id="T_5110e_row9_col0" class="data row9 col0">CREDITOS_CON_IMPAGO</td>
+<td id="T_5110e_row9_col1" class="data row9 col1">Número de créditos con historial de impago</td>
+<td id="T_5110e_row9_col2" class="data row9 col2">Discreta</td>
+</tr>
+<tr class="odd">
+<td id="T_5110e_row10_col0" class="data row10 col0">TOTAL_DEUDA_ACTUAL</td>
+<td id="T_5110e_row10_col1" class="data row10 col1">Deuda total vigente</td>
+<td id="T_5110e_row10_col2" class="data row10 col2">Continua</td>
+</tr>
+<tr class="even">
+<td id="T_5110e_row11_col0" class="data row11 col0">TOTAL_CREDITO_OTORGADO</td>
+<td id="T_5110e_row11_col1" class="data row11 col1">Suma histórica de créditos otorgados</td>
+<td id="T_5110e_row11_col2" class="data row11 col2">Continua</td>
+</tr>
+<tr class="odd">
+<td id="T_5110e_row12_col0" class="data row12 col0">PLAZO_PROMEDIO</td>
+<td id="T_5110e_row12_col1" class="data row12 col1">Plazo promedio de créditos previos</td>
+<td id="T_5110e_row12_col2" class="data row12 col2">Continua</td>
+</tr>
+<tr class="even">
+<td id="T_5110e_row13_col0" class="data row13 col0">RATIO_PAGO_CUOTA</td>
+<td id="T_5110e_row13_col1" class="data row13 col1">Ratio pago realizado / cuota programada</td>
+<td id="T_5110e_row13_col2" class="data row13 col2">Continua</td>
+</tr>
+<tr class="odd">
+<td id="T_5110e_row14_col0" class="data row14 col0">NAME_FAMILY_STATUS</td>
+<td id="T_5110e_row14_col1" class="data row14 col1">Estado civil</td>
+<td id="T_5110e_row14_col2" class="data row14 col2">Categórica</td>
+</tr>
+<tr class="even">
+<td id="T_5110e_row15_col0" class="data row15 col0">CODE_GENDER</td>
+<td id="T_5110e_row15_col1" class="data row15 col1">Género</td>
+<td id="T_5110e_row15_col2" class="data row15 col2">Categórica</td>
+</tr>
+<tr class="odd">
+<td id="T_5110e_row16_col0" class="data row16 col0">NAME_EDUCATION_TYPE</td>
+<td id="T_5110e_row16_col1" class="data row16 col1">Nivel educativo</td>
+<td id="T_5110e_row16_col2" class="data row16 col2">Categórica</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+</section>
+<section id="b.-código-fuente" class="level2" data-number="12.2">
+<h2 data-number="12.2" class="anchored" data-anchor-id="b.-código-fuente"><span class="header-section-number">12.2</span> B. Código Fuente</h2>
+<p>El código completo de este análisis está disponible en los siguientes notebooks:</p>
+<ul>
+<li><code>src/eda/eda.ipynb</code>: Análisis exploratorio de datos</li>
+<li><code>src/eda/variables.ipynb</code>: Generación de variables y Regresión Logística</li>
+<li><code>src/random_forest/random_forest.ipynb</code>: Modelos Random Forest</li>
+<li><code>src/xgboost/jp-xgboost.ipynb</code>: Modelos XGBoost</li>
+</ul>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

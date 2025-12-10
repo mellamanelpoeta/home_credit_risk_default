@@ -1,0 +1,2290 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.33">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Gerardo Guerrero">
+<meta name="author" content="Juan Pablo Cordero">
+<meta name="author" content="Jerónimo Deli">
+<meta name="author" content="Romain S">
+<meta name="dcterms.date" content="2025-09-12">
+
+<title>Predicción de Riesgo de Impago Crediticio</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script><script src="reporte-final_files/libs/clipboard/clipboard.min.js"></script>
+<script src="reporte-final_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="reporte-final_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="reporte-final_files/libs/quarto-html/popper.min.js"></script>
+<script src="reporte-final_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="reporte-final_files/libs/quarto-html/anchor.min.js"></script>
+<link href="reporte-final_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="reporte-final_files/libs/quarto-html/quarto-syntax-highlighting-ea385d0e468b0dd5ea5bf0780b1290d9.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="reporte-final_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="reporte-final_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="reporte-final_files/libs/bootstrap/bootstrap-8a894fcc3cb5e37eb5bf30def131be2f.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" integrity="sha512-c3Nl8+7g4LMSTdrm621y7kf9v3SDPnhxLNhcjFJbKECVnmZHTdo+IRO05sNLTH/D3vA6u1X32ehoLC7WFVdheg==" crossorigin="anonymous"></script>
+
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#introducción" id="toc-introducción" class="nav-link active" data-scroll-target="#introducción"><span class="header-section-number">1</span> Introducción</a>
+  <ul class="collapse">
+  <li><a href="#contexto-del-problema" id="toc-contexto-del-problema" class="nav-link" data-scroll-target="#contexto-del-problema"><span class="header-section-number">1.1</span> Contexto del Problema</a></li>
+  <li><a href="#marco-conceptual-el-grafo-causal-del-impago" id="toc-marco-conceptual-el-grafo-causal-del-impago" class="nav-link" data-scroll-target="#marco-conceptual-el-grafo-causal-del-impago"><span class="header-section-number">1.2</span> Marco Conceptual: El Grafo Causal del Impago</a>
+  <ul class="collapse">
+  <li><a href="#modelo-causal-simplificado" id="toc-modelo-causal-simplificado" class="nav-link" data-scroll-target="#modelo-causal-simplificado"><span class="header-section-number">1.2.1</span> Modelo Causal Simplificado</a></li>
+  <li><a href="#modelo-causal-detallado" id="toc-modelo-causal-detallado" class="nav-link" data-scroll-target="#modelo-causal-detallado"><span class="header-section-number">1.2.2</span> Modelo Causal Detallado</a></li>
+  </ul></li>
+  <li><a href="#hipótesis-de-investigación" id="toc-hipótesis-de-investigación" class="nav-link" data-scroll-target="#hipótesis-de-investigación"><span class="header-section-number">1.3</span> Hipótesis de Investigación</a></li>
+  <li><a href="#preguntas-de-investigación" id="toc-preguntas-de-investigación" class="nav-link" data-scroll-target="#preguntas-de-investigación"><span class="header-section-number">1.4</span> Preguntas de Investigación</a></li>
+  </ul></li>
+  <li><a href="#metodología-y-datos" id="toc-metodología-y-datos" class="nav-link" data-scroll-target="#metodología-y-datos"><span class="header-section-number">2</span> Metodología y Datos</a>
+  <ul class="collapse">
+  <li><a href="#descripción-del-dataset" id="toc-descripción-del-dataset" class="nav-link" data-scroll-target="#descripción-del-dataset"><span class="header-section-number">2.1</span> Descripción del Dataset</a></li>
+  <li><a href="#carga-de-datos" id="toc-carga-de-datos" class="nav-link" data-scroll-target="#carga-de-datos"><span class="header-section-number">2.2</span> Carga de Datos</a></li>
+  <li><a href="#variables-originales-de-application-train" id="toc-variables-originales-de-application-train" class="nav-link" data-scroll-target="#variables-originales-de-application-train"><span class="header-section-number">2.3</span> Variables Originales de Application Train</a>
+  <ul class="collapse">
+  <li><a href="#variables-demográficas" id="toc-variables-demográficas" class="nav-link" data-scroll-target="#variables-demográficas"><span class="header-section-number">2.3.1</span> Variables Demográficas</a></li>
+  <li><a href="#variables-financieras" id="toc-variables-financieras" class="nav-link" data-scroll-target="#variables-financieras"><span class="header-section-number">2.3.2</span> Variables Financieras</a></li>
+  <li><a href="#scores-de-riesgo-externos" id="toc-scores-de-riesgo-externos" class="nav-link" data-scroll-target="#scores-de-riesgo-externos"><span class="header-section-number">2.3.3</span> Scores de Riesgo Externos</a></li>
+  <li><a href="#variables-de-activos" id="toc-variables-de-activos" class="nav-link" data-scroll-target="#variables-de-activos"><span class="header-section-number">2.3.4</span> Variables de Activos</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#ingeniería-de-variables" id="toc-ingeniería-de-variables" class="nav-link" data-scroll-target="#ingeniería-de-variables"><span class="header-section-number">3</span> Ingeniería de Variables</a>
+  <ul class="collapse">
+  <li><a href="#generación-de-features" id="toc-generación-de-features" class="nav-link" data-scroll-target="#generación-de-features"><span class="header-section-number">3.1</span> Generación de Features</a></li>
+  <li><a href="#distribución-de-la-variable-objetivo" id="toc-distribución-de-la-variable-objetivo" class="nav-link" data-scroll-target="#distribución-de-la-variable-objetivo"><span class="header-section-number">3.2</span> Distribución de la Variable Objetivo</a></li>
+  <li><a href="#análisis-de-correlaciones" id="toc-análisis-de-correlaciones" class="nav-link" data-scroll-target="#análisis-de-correlaciones"><span class="header-section-number">3.3</span> Análisis de Correlaciones</a></li>
+  <li><a href="#selección-de-variables" id="toc-selección-de-variables" class="nav-link" data-scroll-target="#selección-de-variables"><span class="header-section-number">3.4</span> Selección de Variables</a></li>
+  </ul></li>
+  <li><a href="#regresión-logística" id="toc-regresión-logística" class="nav-link" data-scroll-target="#regresión-logística"><span class="header-section-number">4</span> Regresión Logística</a>
+  <ul class="collapse">
+  <li><a href="#teoría" id="toc-teoría" class="nav-link" data-scroll-target="#teoría"><span class="header-section-number">4.1</span> Teoría</a>
+  <ul class="collapse">
+  <li><a href="#función-sigmoide" id="toc-función-sigmoide" class="nav-link" data-scroll-target="#función-sigmoide"><span class="header-section-number">4.1.1</span> Función Sigmoide</a></li>
+  <li><a href="#interpretación-de-coeficientes" id="toc-interpretación-de-coeficientes" class="nav-link" data-scroll-target="#interpretación-de-coeficientes"><span class="header-section-number">4.1.2</span> Interpretación de Coeficientes</a></li>
+  <li><a href="#función-de-pérdida-log-loss-entropía-cruzada-binaria" id="toc-función-de-pérdida-log-loss-entropía-cruzada-binaria" class="nav-link" data-scroll-target="#función-de-pérdida-log-loss-entropía-cruzada-binaria"><span class="header-section-number">4.1.3</span> Función de Pérdida: Log-Loss (Entropía Cruzada Binaria)</a></li>
+  <li><a href="#regularización" id="toc-regularización" class="nav-link" data-scroll-target="#regularización"><span class="header-section-number">4.1.4</span> Regularización</a></li>
+  </ul></li>
+  <li><a href="#entrenamiento-del-modelo" id="toc-entrenamiento-del-modelo" class="nav-link" data-scroll-target="#entrenamiento-del-modelo"><span class="header-section-number">4.2</span> Entrenamiento del Modelo</a></li>
+  <li><a href="#resultados-del-modelo" id="toc-resultados-del-modelo" class="nav-link" data-scroll-target="#resultados-del-modelo"><span class="header-section-number">4.3</span> Resultados del Modelo</a>
+  <ul class="collapse">
+  <li><a href="#matriz-de-confusión" id="toc-matriz-de-confusión" class="nav-link" data-scroll-target="#matriz-de-confusión"><span class="header-section-number">4.3.1</span> Matriz de Confusión</a></li>
+  <li><a href="#importancia-de-variables" id="toc-importancia-de-variables" class="nav-link" data-scroll-target="#importancia-de-variables"><span class="header-section-number">4.3.2</span> Importancia de Variables</a></li>
+  <li><a href="#curvas-roc-y-precision-recall" id="toc-curvas-roc-y-precision-recall" class="nav-link" data-scroll-target="#curvas-roc-y-precision-recall"><span class="header-section-number">4.3.3</span> Curvas ROC y Precision-Recall</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#random-forest" id="toc-random-forest" class="nav-link" data-scroll-target="#random-forest"><span class="header-section-number">5</span> Random Forest</a>
+  <ul class="collapse">
+  <li><a href="#descripción-del-modelo" id="toc-descripción-del-modelo" class="nav-link" data-scroll-target="#descripción-del-modelo"><span class="header-section-number">5.1</span> Descripción del Modelo</a>
+  <ul class="collapse">
+  <li><a href="#importancia-de-variables-gini-importance" id="toc-importancia-de-variables-gini-importance" class="nav-link" data-scroll-target="#importancia-de-variables-gini-importance"><span class="header-section-number">5.1.1</span> Importancia de Variables (Gini Importance)</a></li>
+  </ul></li>
+  <li><a href="#entrenamiento-del-modelo-1" id="toc-entrenamiento-del-modelo-1" class="nav-link" data-scroll-target="#entrenamiento-del-modelo-1"><span class="header-section-number">5.2</span> Entrenamiento del Modelo</a></li>
+  <li><a href="#resultados-del-modelo-1" id="toc-resultados-del-modelo-1" class="nav-link" data-scroll-target="#resultados-del-modelo-1"><span class="header-section-number">5.3</span> Resultados del Modelo</a>
+  <ul class="collapse">
+  <li><a href="#matriz-de-confusión-1" id="toc-matriz-de-confusión-1" class="nav-link" data-scroll-target="#matriz-de-confusión-1"><span class="header-section-number">5.3.1</span> Matriz de Confusión</a></li>
+  <li><a href="#importancia-de-variables-1" id="toc-importancia-de-variables-1" class="nav-link" data-scroll-target="#importancia-de-variables-1"><span class="header-section-number">5.3.2</span> Importancia de Variables</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#xgboost" id="toc-xgboost" class="nav-link" data-scroll-target="#xgboost"><span class="header-section-number">6</span> XGBoost</a>
+  <ul class="collapse">
+  <li><a href="#descripción-del-modelo-1" id="toc-descripción-del-modelo-1" class="nav-link" data-scroll-target="#descripción-del-modelo-1"><span class="header-section-number">6.1</span> Descripción del Modelo</a>
+  <ul class="collapse">
+  <li><a href="#mecanismo-de-boosting" id="toc-mecanismo-de-boosting" class="nav-link" data-scroll-target="#mecanismo-de-boosting"><span class="header-section-number">6.1.1</span> Mecanismo de Boosting</a></li>
+  <li><a href="#learning-rate-η" id="toc-learning-rate-η" class="nav-link" data-scroll-target="#learning-rate-η"><span class="header-section-number">6.1.2</span> Learning Rate (η)</a></li>
+  </ul></li>
+  <li><a href="#entrenamiento-del-modelo-2" id="toc-entrenamiento-del-modelo-2" class="nav-link" data-scroll-target="#entrenamiento-del-modelo-2"><span class="header-section-number">6.2</span> Entrenamiento del Modelo</a></li>
+  <li><a href="#resultados-del-modelo-2" id="toc-resultados-del-modelo-2" class="nav-link" data-scroll-target="#resultados-del-modelo-2"><span class="header-section-number">6.3</span> Resultados del Modelo</a>
+  <ul class="collapse">
+  <li><a href="#matriz-de-confusión-2" id="toc-matriz-de-confusión-2" class="nav-link" data-scroll-target="#matriz-de-confusión-2"><span class="header-section-number">6.3.1</span> Matriz de Confusión</a></li>
+  <li><a href="#importancia-de-variables-2" id="toc-importancia-de-variables-2" class="nav-link" data-scroll-target="#importancia-de-variables-2"><span class="header-section-number">6.3.2</span> Importancia de Variables</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#comparación-de-modelos" id="toc-comparación-de-modelos" class="nav-link" data-scroll-target="#comparación-de-modelos"><span class="header-section-number">7</span> Comparación de Modelos</a>
+  <ul class="collapse">
+  <li><a href="#métricas-globales" id="toc-métricas-globales" class="nav-link" data-scroll-target="#métricas-globales"><span class="header-section-number">7.1</span> Métricas Globales</a></li>
+  <li><a href="#curvas-roc-comparativas" id="toc-curvas-roc-comparativas" class="nav-link" data-scroll-target="#curvas-roc-comparativas"><span class="header-section-number">7.2</span> Curvas ROC Comparativas</a></li>
+  <li><a href="#matrices-de-confusión-comparativas" id="toc-matrices-de-confusión-comparativas" class="nav-link" data-scroll-target="#matrices-de-confusión-comparativas"><span class="header-section-number">7.3</span> Matrices de Confusión Comparativas</a></li>
+  </ul></li>
+  <li><a href="#conclusiones" id="toc-conclusiones" class="nav-link" data-scroll-target="#conclusiones"><span class="header-section-number">8</span> Conclusiones</a>
+  <ul class="collapse">
+  <li><a href="#hallazgos-principales" id="toc-hallazgos-principales" class="nav-link" data-scroll-target="#hallazgos-principales"><span class="header-section-number">8.1</span> Hallazgos Principales</a>
+  <ul class="collapse">
+  <li><a href="#el-score-crediticio-es-el-predictor-dominante" id="toc-el-score-crediticio-es-el-predictor-dominante" class="nav-link" data-scroll-target="#el-score-crediticio-es-el-predictor-dominante"><span class="header-section-number">8.1.1</span> 1. El Score Crediticio es el Predictor Dominante</a></li>
+  <li><a href="#comparación-de-rendimiento" id="toc-comparación-de-rendimiento" class="nav-link" data-scroll-target="#comparación-de-rendimiento"><span class="header-section-number">8.1.2</span> 2. Comparación de Rendimiento</a></li>
+  <li><a href="#trade-off-entre-interpretabilidad-y-rendimiento" id="toc-trade-off-entre-interpretabilidad-y-rendimiento" class="nav-link" data-scroll-target="#trade-off-entre-interpretabilidad-y-rendimiento"><span class="header-section-number">8.1.3</span> 3. Trade-off entre Interpretabilidad y Rendimiento</a></li>
+  </ul></li>
+  <li><a href="#ventajas-y-desventajas-de-cada-modelo" id="toc-ventajas-y-desventajas-de-cada-modelo" class="nav-link" data-scroll-target="#ventajas-y-desventajas-de-cada-modelo"><span class="header-section-number">8.2</span> Ventajas y Desventajas de Cada Modelo</a></li>
+  <li><a href="#recomendación-final" id="toc-recomendación-final" class="nav-link" data-scroll-target="#recomendación-final"><span class="header-section-number">8.3</span> Recomendación Final</a>
+  <ul class="collapse">
+  <li><a href="#para-producción" id="toc-para-producción" class="nav-link" data-scroll-target="#para-producción"><span class="header-section-number">8.3.1</span> Para Producción</a></li>
+  <li><a href="#validación-de-hipótesis" id="toc-validación-de-hipótesis" class="nav-link" data-scroll-target="#validación-de-hipótesis"><span class="header-section-number">8.3.2</span> Validación de Hipótesis</a></li>
+  </ul></li>
+  <li><a href="#limitaciones-y-trabajo-futuro" id="toc-limitaciones-y-trabajo-futuro" class="nav-link" data-scroll-target="#limitaciones-y-trabajo-futuro"><span class="header-section-number">8.4</span> Limitaciones y Trabajo Futuro</a></li>
+  </ul></li>
+  <li><a href="#referencias" id="toc-referencias" class="nav-link" data-scroll-target="#referencias"><span class="header-section-number">9</span> Referencias</a></li>
+  </ul>
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="reporte-final.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Predicción de Riesgo de Impago Crediticio</h1>
+<p class="subtitle lead">Home Credit Default Risk - Un Enfoque Multivariado</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Authors</div>
+    <div class="quarto-title-meta-contents">
+             <p>Gerardo Guerrero </p>
+             <p>Juan Pablo Cordero </p>
+             <p>Jerónimo Deli </p>
+             <p>Romain S </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">September 12, 2025</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="introducción" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Introducción</h1>
+<section id="contexto-del-problema" class="level2" data-number="1.1">
+<h2 data-number="1.1" class="anchored" data-anchor-id="contexto-del-problema"><span class="header-section-number">1.1</span> Contexto del Problema</h2>
+<p>El acceso al crédito es un pilar fundamental para el desarrollo económico individual y colectivo. Sin embargo, las instituciones financieras enfrentan el desafío constante de evaluar el <strong>riesgo de incumplimiento</strong> (<em>default</em>) de sus clientes. Una evaluación inadecuada puede resultar en pérdidas significativas para la institución o, por otro lado, en la exclusión financiera de personas que podrían cumplir con sus obligaciones.</p>
+<p><strong>Home Credit Group</strong> es una compañía de servicios financieros enfocada en préstamos a poblaciones no bancarizadas o con historial crediticio limitado. El problema que abordamos es la <strong>predicción del riesgo de impago</strong> utilizando técnicas estadísticas multivariadas, con el objetivo de:</p>
+<ol type="1">
+<li><strong>Identificar clientes con alta probabilidad de incumplimiento</strong> antes de otorgar el crédito</li>
+<li><strong>Comprender los factores que influyen en el impago</strong> para diseñar políticas de mitigación</li>
+<li><strong>Equilibrar la inclusión financiera con la gestión del riesgo</strong></li>
+</ol>
+<p>Desde la perspectiva de la gestión de riesgos, el objetivo no es únicamente predecir quién hará o no hará default, sino <strong>estimar probabilidades</strong> que permitan tomar decisiones bajo restricciones de capital, regulación y apetito de riesgo. En este sentido, un modelo de probabilidad de impago se convierte en una herramienta cuantitativa clave para:</p>
+<ul>
+<li>Definir <strong>políticas de originación</strong> (qué tipo de clientes aceptar o rechazar).</li>
+<li>Ajustar <strong>límites de crédito</strong> y condiciones como plazo y tasa.</li>
+<li>Alimentar modelos de <strong>pérdida esperada</strong> (PD × LGD × EAD) y de provisiones regulatorias.</li>
+<li>Diseñar estrategias de <strong>seguimiento temprano</strong> (early warning) y cobranza preventiva.</li>
+</ul>
+<p>A lo largo del reporte, nuestro énfasis estará en balancear el desempeño estadístico del modelo con su <strong>utilidad práctica</strong> en la toma de decisiones crediticias.</p>
+</section>
+<section id="marco-conceptual-el-grafo-causal-del-impago" class="level2" data-number="1.2">
+<h2 data-number="1.2" class="anchored" data-anchor-id="marco-conceptual-el-grafo-causal-del-impago"><span class="header-section-number">1.2</span> Marco Conceptual: El Grafo Causal del Impago</h2>
+<p>Antes de desarrollar nuestros modelos predictivos, construimos un <strong>grafo causal</strong> que representa nuestra comprensión teórica del fenómeno. Este ejercicio de pensamiento causal nos permite identificar las variables relevantes y sus relaciones, fundamentando así nuestro enfoque analítico.</p>
+<section id="modelo-causal-simplificado" class="level3" data-number="1.2.1">
+<h3 data-number="1.2.1" class="anchored" data-anchor-id="modelo-causal-simplificado"><span class="header-section-number">1.2.1</span> Modelo Causal Simplificado</h3>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/Screenshot%202025-12-09%20at%2015.42.37.png" class="img-fluid figure-img"></p>
+<figcaption>Grafo Causal Simple</figcaption>
+</figure>
+</div>
+<p>El impago crediticio puede originarse por dos vías principales:</p>
+<ul>
+<li><strong>Fraude</strong>: Cuando el cliente nunca tuvo intención de pagar</li>
+<li><strong>Capacidad de Pago</strong>: Cuando el cliente no puede cumplir con sus obligaciones debido a restricciones económicas</li>
+</ul>
+</section>
+<section id="modelo-causal-detallado" class="level3" data-number="1.2.2">
+<h3 data-number="1.2.2" class="anchored" data-anchor-id="modelo-causal-detallado"><span class="header-section-number">1.2.2</span> Modelo Causal Detallado</h3>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/Screenshot%202025-12-09%20at%2015.43.36.png" class="img-fluid figure-img"></p>
+<figcaption>Grafo Causal Detallado</figcaption>
+</figure>
+</div>
+<p>El grafo causal detallado nos muestra las relaciones entre las distintas variables que capturamos en los datos y cómo estas se relacionan con los dos mecanismos principales de impago.</p>
+<p>El grafo causal detallado sirve como una <strong>capa intermedia</strong> entre el conocimiento de negocio y la modelación estadística. Más allá de listar variables, nos obliga a responder preguntas como:</p>
+<ul>
+<li>¿Qué mecanismos generan realmente el impago (fraude vs.&nbsp;incapacidad de pago)?</li>
+<li>¿Qué variables son se correlacionan con impago?</li>
+<li>¿Qué información proviene del cliente, del buró u otras fuentes externas?</li>
+</ul>
+<p>En la práctica, este grafo:</p>
+<ol type="1">
+<li><strong>Guía la ingeniería de variables</strong>: por ejemplo, agrupar información de buró en indicadores de mora histórica, carga de deuda y número de créditos activos.</li>
+<li><strong>Ayuda a interpretar el modelo a posteriori</strong>: si una variable aparece como importante en el modelo, podemos ubicarla en el grafo y entender si actúa como proxy de fraude, de capacidad de pago o de algún canal más específico.</li>
+</ol>
+<p>Aunque no construimos un modelo causal formal (con identificación y estimación de efectos causales), este esquema nos permite mantener coherencia entre la construcción de features y la narrativa económica del impago.</p>
+</section>
+</section>
+<section id="hipótesis-de-investigación" class="level2" data-number="1.3">
+<h2 data-number="1.3" class="anchored" data-anchor-id="hipótesis-de-investigación"><span class="header-section-number">1.3</span> Hipótesis de Investigación</h2>
+<p>Con base en el marco causal, formulamos las siguientes hipótesis que guiarán nuestro análisis:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 23%">
+<col style="width: 34%">
+<col style="width: 41%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Hipótesis</th>
+<th>Variable Proxy</th>
+<th>Relación Esperada</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Préstamos más altos incrementan la probabilidad de impago</td>
+<td><code>AMT_CREDIT</code></td>
+<td>Positiva</td>
+</tr>
+<tr class="even">
+<td>Menor edad y sin historial crediticio aumenta el riesgo</td>
+<td><code>EDAD_ANOS</code>, <code>ES_PRIMER_CREDITO</code></td>
+<td>Negativa, Positiva</td>
+</tr>
+<tr class="odd">
+<td>Mal historial crediticio incrementa el riesgo</td>
+<td><code>EXT_SOURCE_1/2/3</code>, <code>SCORE_PROMEDIO</code></td>
+<td>Negativa</td>
+</tr>
+<tr class="even">
+<td>Menor ingreso incrementa el riesgo</td>
+<td><code>AMT_INCOME_TOTAL</code>, <code>INGRESO_PER_CAPITA</code></td>
+<td>Negativa</td>
+</tr>
+<tr class="odd">
+<td>Mayor carga de gastos incrementa el riesgo</td>
+<td><code>CNT_CHILDREN</code>, <code>CNT_FAM_MEMBERS</code></td>
+<td>Positiva</td>
+</tr>
+<tr class="even">
+<td>Mayor deuda acumulada incrementa el riesgo</td>
+<td><code>TOTAL_DEUDA_ACTUAL</code>, <code>CREDITOS_ACTIVOS</code></td>
+<td>Positiva</td>
+</tr>
+<tr class="odd">
+<td>Menos activos incrementan el riesgo</td>
+<td><code>NUM_ACTIVOS</code>, <code>FLAG_OWN_CAR</code>, <code>FLAG_OWN_REALTY</code></td>
+<td>Negativa</td>
+</tr>
+<tr class="even">
+<td>Condiciones crediticias adversas aumentan el riesgo</td>
+<td><code>TASA_INTERES_PROMEDIO</code>, <code>PLAZO_PROMEDIO</code></td>
+<td>Positiva</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="preguntas-de-investigación" class="level2" data-number="1.4">
+<h2 data-number="1.4" class="anchored" data-anchor-id="preguntas-de-investigación"><span class="header-section-number">1.4</span> Preguntas de Investigación</h2>
+<ol type="1">
+<li>¿Cuáles son las variables con mayor poder predictivo para identificar clientes en riesgo de impago?</li>
+<li>¿Qué modelo (Regresión Logística, Random Forest o XGBoost) ofrece el mejor balance entre interpretabilidad y poder predictivo?</li>
+</ol>
+</section>
+</section>
+<section id="metodología-y-datos" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> Metodología y Datos</h1>
+<section id="descripción-del-dataset" class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="descripción-del-dataset"><span class="header-section-number">2.1</span> Descripción del Dataset</h2>
+<p>El conjunto de datos proviene de la competencia <a href="https://www.kaggle.com/competitions/home-credit-default-risk">Home Credit Default Risk</a> de Kaggle. La estructura de datos incluye múltiples tablas relacionadas:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://storage.googleapis.com/kaggle-media/competitions/home-credit/home_credit.png" class="img-fluid figure-img"></p>
+<figcaption>dataset-description</figcaption>
+</figure>
+</div>
+<p>Una característica importante de este dataset es su <strong>estructura relacional</strong>. La tabla <code>application_train</code> contiene la observación “principal” (cada fila es una solicitud de crédito), mientras que el resto de tablas describen el <strong>historial del cliente en distintas dimensiones</strong>:</p>
+<ul>
+<li><code>bureau</code> y <code>bureau_balance</code> capturan el comportamiento del cliente en otras instituciones financieras.</li>
+<li><code>previous_application</code>, <code>installments_payments</code> y <code>credit_card_balance</code> describen el ciclo de vida de créditos previos con Home Credit (originación, pagos, atrasos, etc.).</li>
+<li><code>POS_CASH_balance</code> complementa la información con productos tipo POS / cash loans.</li>
+</ul>
+<p>Esto implica dos retos principales:</p>
+<ol type="1">
+<li><strong>Integración de información</strong>: es necesario definir una estrategia para pasar de tablas transaccionales (múltiples registros por cliente) a variables agregadas por <code>SK_ID_CURR</code>.</li>
+<li><strong>Escalabilidad computacional</strong>: algunas tablas tienen millones de filas; decisiones de agregación, muestreo y tipos de datos afectan directamente el tiempo de cómputo y el uso de memoria.</li>
+</ol>
+<p>La ingeniería de variables que describimos en la siguiente sección responde precisamente a estos retos.</p>
+</section>
+<section id="carga-de-datos" class="level2" data-number="2.2">
+<h2 data-number="2.2" class="anchored" data-anchor-id="carga-de-datos"><span class="header-section-number">2.2</span> Carga de Datos</h2>
+<div id="carga-datos" class="cell" data-execution_count="2">
+<details class="code-fold">
+<summary>Ver código de carga de datos</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Cargando datasets...</span><span class="ch">\n</span><span class="st">"</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>app_train <span class="op">=</span> pd.read_csv(<span class="st">'../data/home-credit-default-risk/application_train.csv'</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>bureau <span class="op">=</span> pd.read_csv(<span class="st">'../data/home-credit-default-risk/bureau.csv'</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>bureau_balance <span class="op">=</span> pd.read_csv(<span class="st">'../data/home-credit-default-risk/bureau_balance.csv'</span>)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>prev_app <span class="op">=</span> pd.read_csv(<span class="st">'../data/home-credit-default-risk/previous_application.csv'</span>)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>pos_cash <span class="op">=</span> pd.read_csv(<span class="st">'../data/home-credit-default-risk/POS_CASH_balance.csv'</span>)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>credit_card <span class="op">=</span> pd.read_csv(<span class="st">'../data/home-credit-default-risk/credit_card_balance.csv'</span>)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>installments <span class="op">=</span> pd.read_csv(<span class="st">'../data/home-credit-default-risk/installments_payments.csv'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Cargando datasets...
+</code></pre>
+</div>
+</div>
+<div class="cell" data-execution_count="3">
+<div id="tbl-datasets" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="3">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-datasets-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;1: Estructura del dataset Home Credit Default Risk
+</figcaption>
+<div aria-describedby="tbl-datasets-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display">
+<style type="text/css">
+</style>
+
+<table id="T_da795" class="do-not-create-environment cell caption-top table table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th id="T_da795_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">Tabla</th>
+<th id="T_da795_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">Descripción</th>
+<th id="T_da795_level0_col2" class="col_heading level0 col2" data-quarto-table-cell-role="th">Registros</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td id="T_da795_row0_col0" class="data row0 col0">application_train.csv</td>
+<td id="T_da795_row0_col1" class="data row0 col1">Información principal de las solicitudes</td>
+<td id="T_da795_row0_col2" class="data row0 col2">307,511</td>
+</tr>
+<tr class="even">
+<td id="T_da795_row1_col0" class="data row1 col0">bureau.csv</td>
+<td id="T_da795_row1_col1" class="data row1 col1">Historial crediticio de otras instituciones</td>
+<td id="T_da795_row1_col2" class="data row1 col2">1,716,428</td>
+</tr>
+<tr class="odd">
+<td id="T_da795_row2_col0" class="data row2 col0">bureau_balance.csv</td>
+<td id="T_da795_row2_col1" class="data row2 col1">Balance mensual de créditos en buró</td>
+<td id="T_da795_row2_col2" class="data row2 col2">27,299,925</td>
+</tr>
+<tr class="even">
+<td id="T_da795_row3_col0" class="data row3 col0">previous_application.csv</td>
+<td id="T_da795_row3_col1" class="data row3 col1">Solicitudes previas en Home Credit</td>
+<td id="T_da795_row3_col2" class="data row3 col2">1,670,214</td>
+</tr>
+<tr class="odd">
+<td id="T_da795_row4_col0" class="data row4 col0">installments_payments.csv</td>
+<td id="T_da795_row4_col1" class="data row4 col1">Historial de pagos</td>
+<td id="T_da795_row4_col2" class="data row4 col2">13,605,401</td>
+</tr>
+<tr class="even">
+<td id="T_da795_row5_col0" class="data row5 col0">credit_card_balance.csv</td>
+<td id="T_da795_row5_col1" class="data row5 col1">Balance de tarjetas de crédito</td>
+<td id="T_da795_row5_col2" class="data row5 col2">3,840,312</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+</section>
+<section id="variables-originales-de-application-train" class="level2" data-number="2.3">
+<h2 data-number="2.3" class="anchored" data-anchor-id="variables-originales-de-application-train"><span class="header-section-number">2.3</span> Variables Originales de Application Train</h2>
+<p>La tabla principal <code>application_train.csv</code> contiene 122 variables que se pueden agrupar en las siguientes categorías:</p>
+<section id="variables-demográficas" class="level3" data-number="2.3.1">
+<h3 data-number="2.3.1" class="anchored" data-anchor-id="variables-demográficas"><span class="header-section-number">2.3.1</span> Variables Demográficas</h3>
+<ul>
+<li><code>CODE_GENDER</code>: Género del solicitante</li>
+<li><code>DAYS_BIRTH</code>: Edad en días (negativo)</li>
+<li><code>NAME_FAMILY_STATUS</code>: Estado civil</li>
+<li><code>CNT_CHILDREN</code>: Número de hijos</li>
+<li><code>CNT_FAM_MEMBERS</code>: Número de miembros en la familia</li>
+<li><code>NAME_EDUCATION_TYPE</code>: Nivel educativo</li>
+<li><code>NAME_INCOME_TYPE</code>: Tipo de ingreso</li>
+</ul>
+</section>
+<section id="variables-financieras" class="level3" data-number="2.3.2">
+<h3 data-number="2.3.2" class="anchored" data-anchor-id="variables-financieras"><span class="header-section-number">2.3.2</span> Variables Financieras</h3>
+<ul>
+<li><code>AMT_INCOME_TOTAL</code>: Ingreso total del solicitante</li>
+<li><code>AMT_CREDIT</code>: Monto del crédito solicitado</li>
+<li><code>AMT_ANNUITY</code>: Anualidad del préstamo</li>
+<li><code>AMT_GOODS_PRICE</code>: Precio del bien a comprar</li>
+</ul>
+</section>
+<section id="scores-de-riesgo-externos" class="level3" data-number="2.3.3">
+<h3 data-number="2.3.3" class="anchored" data-anchor-id="scores-de-riesgo-externos"><span class="header-section-number">2.3.3</span> Scores de Riesgo Externos</h3>
+<ul>
+<li><code>EXT_SOURCE_1</code>: Score buro de crédito 1</li>
+<li><code>EXT_SOURCE_2</code>: Score buro de crédito 2</li>
+<li><code>EXT_SOURCE_3</code>: Score buro de crédito 3</li>
+</ul>
+</section>
+<section id="variables-de-activos" class="level3" data-number="2.3.4">
+<h3 data-number="2.3.4" class="anchored" data-anchor-id="variables-de-activos"><span class="header-section-number">2.3.4</span> Variables de Activos</h3>
+<ul>
+<li><code>FLAG_OWN_CAR</code>: Si posee automóvil</li>
+<li><code>FLAG_OWN_REALTY</code>: Si posee propiedad inmobiliaria</li>
+<li><code>OWN_CAR_AGE</code>: Edad del automóvil</li>
+</ul>
+</section>
+</section>
+</section>
+<section id="ingeniería-de-variables" class="level1" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> Ingeniería de Variables</h1>
+<section id="generación-de-features" class="level2" data-number="3.1">
+<h2 data-number="3.1" class="anchored" data-anchor-id="generación-de-features"><span class="header-section-number">3.1</span> Generación de Features</h2>
+<p>A partir de las tablas relacionadas, construimos variables que capturan diferentes dimensiones del riesgo crediticio:</p>
+<div id="feature-engineering" class="cell" data-execution_count="4">
+<details class="code-fold">
+<summary>Ver código de ingeniería de variables</summary>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># PARTE 1: FEATURES BASE DE APPLICATION</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> app_train[[<span class="st">'SK_ID_CURR'</span>, <span class="st">'TARGET'</span>]].copy()</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Features básicas</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'AMT_CREDIT'</span>] <span class="op">=</span> app_train[<span class="st">'AMT_CREDIT'</span>]</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'AMT_ANNUITY'</span>] <span class="op">=</span> app_train[<span class="st">'AMT_ANNUITY'</span>]</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'AMT_INCOME_TOTAL'</span>] <span class="op">=</span> app_train[<span class="st">'AMT_INCOME_TOTAL'</span>]</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Edad</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'DAYS_BIRTH'</span>] <span class="op">=</span> app_train[<span class="st">'DAYS_BIRTH'</span>]</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'EDAD_ANOS'</span>] <span class="op">=</span> <span class="bu">abs</span>(app_train[<span class="st">'DAYS_BIRTH'</span>]) <span class="op">/</span> <span class="fl">365.25</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Scores externos</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'EXT_SOURCE_1'</span>] <span class="op">=</span> app_train[<span class="st">'EXT_SOURCE_1'</span>]</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'EXT_SOURCE_2'</span>] <span class="op">=</span> app_train[<span class="st">'EXT_SOURCE_2'</span>]</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'EXT_SOURCE_3'</span>] <span class="op">=</span> app_train[<span class="st">'EXT_SOURCE_3'</span>]</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'SCORE_PROMEDIO'</span>] <span class="op">=</span> app_train[[<span class="st">'EXT_SOURCE_1'</span>, <span class="st">'EXT_SOURCE_2'</span>, <span class="st">'EXT_SOURCE_3'</span>]].mean(axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="co"># Ratios</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'CREDIT_INCOME_RATIO'</span>] <span class="op">=</span> df[<span class="st">'AMT_CREDIT'</span>] <span class="op">/</span> df[<span class="st">'AMT_INCOME_TOTAL'</span>]</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a><span class="co"># Familia</span></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'NAME_FAMILY_STATUS'</span>] <span class="op">=</span> app_train[<span class="st">'NAME_FAMILY_STATUS'</span>]</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'CNT_CHILDREN'</span>] <span class="op">=</span> app_train[<span class="st">'CNT_CHILDREN'</span>]</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'CNT_FAM_MEMBERS'</span>] <span class="op">=</span> app_train[<span class="st">'CNT_FAM_MEMBERS'</span>]</span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'CODE_GENDER'</span>] <span class="op">=</span> app_train[<span class="st">'CODE_GENDER'</span>]</span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'NAME_EDUCATION_TYPE'</span>] <span class="op">=</span> app_train[<span class="st">'NAME_EDUCATION_TYPE'</span>]</span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'INGRESO_PER_CAPITA'</span>] <span class="op">=</span> np.where(</span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>    df[<span class="st">'CNT_FAM_MEMBERS'</span>] <span class="op">&gt;</span> <span class="dv">0</span>,</span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>    df[<span class="st">'AMT_INCOME_TOTAL'</span>] <span class="op">/</span> df[<span class="st">'CNT_FAM_MEMBERS'</span>],</span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>    df[<span class="st">'AMT_INCOME_TOTAL'</span>]</span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a><span class="co"># Activos</span></span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'FLAG_OWN_CAR'</span>] <span class="op">=</span> app_train[<span class="st">'FLAG_OWN_CAR'</span>]</span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'FLAG_OWN_REALTY'</span>] <span class="op">=</span> app_train[<span class="st">'FLAG_OWN_REALTY'</span>]</span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'NUM_ACTIVOS'</span>] <span class="op">=</span> (app_train[<span class="st">'FLAG_OWN_CAR'</span>] <span class="op">==</span> <span class="st">'Y'</span>).astype(<span class="bu">int</span>) <span class="op">+</span> <span class="op">\</span></span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>                    (app_train[<span class="st">'FLAG_OWN_REALTY'</span>] <span class="op">==</span> <span class="st">'Y'</span>).astype(<span class="bu">int</span>)</span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a><span class="co"># Consultas buró</span></span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>bureau_cols <span class="op">=</span> [<span class="st">'AMT_REQ_CREDIT_BUREAU_HOUR'</span>, <span class="st">'AMT_REQ_CREDIT_BUREAU_DAY'</span>, </span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a>               <span class="st">'AMT_REQ_CREDIT_BUREAU_WEEK'</span>, <span class="st">'AMT_REQ_CREDIT_BUREAU_MON'</span>,</span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a>               <span class="st">'AMT_REQ_CREDIT_BUREAU_QRT'</span>, <span class="st">'AMT_REQ_CREDIT_BUREAU_YEAR'</span>]</span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'TOTAL_CONSULTAS_BURO'</span>] <span class="op">=</span> app_train[bureau_cols].fillna(<span class="dv">0</span>).<span class="bu">sum</span>(axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a>bureau_agg <span class="op">=</span> bureau.groupby(<span class="st">'SK_ID_CURR'</span>).agg({</span>
+<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a>    <span class="st">'AMT_CREDIT_SUM_LIMIT'</span>: <span class="st">'sum'</span>,</span>
+<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a>    <span class="st">'AMT_CREDIT_SUM'</span>: <span class="st">'sum'</span>,</span>
+<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a>    <span class="st">'AMT_CREDIT_SUM_DEBT'</span>: <span class="st">'sum'</span>,</span>
+<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a>    <span class="st">'CREDIT_DAY_OVERDUE'</span>: <span class="st">'max'</span>,</span>
+<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a>    <span class="st">'SK_ID_BUREAU'</span>: <span class="st">'count'</span></span>
+<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a>}).reset_index()</span>
+<span id="cb3-54"><a href="#cb3-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a>bureau_agg.columns <span class="op">=</span> [<span class="st">'SK_ID_CURR'</span>, <span class="st">'TOTAL_CREDITO_DISPONIBLE'</span>, </span>
+<span id="cb3-56"><a href="#cb3-56" aria-hidden="true" tabindex="-1"></a>                      <span class="st">'TOTAL_CREDITO_OTORGADO'</span>, <span class="st">'TOTAL_DEUDA_ACTUAL'</span>,</span>
+<span id="cb3-57"><a href="#cb3-57" aria-hidden="true" tabindex="-1"></a>                      <span class="st">'MAX_DIAS_MORA'</span>, <span class="st">'CANTIDAD_CREDITOS_BURO'</span>]</span>
+<span id="cb3-58"><a href="#cb3-58" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-59"><a href="#cb3-59" aria-hidden="true" tabindex="-1"></a><span class="co"># Créditos activos y cerrados</span></span>
+<span id="cb3-60"><a href="#cb3-60" aria-hidden="true" tabindex="-1"></a>bureau_active <span class="op">=</span> bureau[bureau[<span class="st">'CREDIT_ACTIVE'</span>] <span class="op">==</span> <span class="st">'Active'</span>].groupby(<span class="st">'SK_ID_CURR'</span>).size().reset_index(name<span class="op">=</span><span class="st">'CREDITOS_ACTIVOS'</span>)</span>
+<span id="cb3-61"><a href="#cb3-61" aria-hidden="true" tabindex="-1"></a>bureau_closed <span class="op">=</span> bureau[bureau[<span class="st">'CREDIT_ACTIVE'</span>] <span class="op">==</span> <span class="st">'Closed'</span>].groupby(<span class="st">'SK_ID_CURR'</span>).size().reset_index(name<span class="op">=</span><span class="st">'CREDITOS_CERRADOS'</span>)</span>
+<span id="cb3-62"><a href="#cb3-62" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-63"><a href="#cb3-63" aria-hidden="true" tabindex="-1"></a>bureau_agg <span class="op">=</span> bureau_agg.merge(bureau_active, on<span class="op">=</span><span class="st">'SK_ID_CURR'</span>, how<span class="op">=</span><span class="st">'left'</span>)</span>
+<span id="cb3-64"><a href="#cb3-64" aria-hidden="true" tabindex="-1"></a>bureau_agg <span class="op">=</span> bureau_agg.merge(bureau_closed, on<span class="op">=</span><span class="st">'SK_ID_CURR'</span>, how<span class="op">=</span><span class="st">'left'</span>)</span>
+<span id="cb3-65"><a href="#cb3-65" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-66"><a href="#cb3-66" aria-hidden="true" tabindex="-1"></a>bureau_agg[<span class="st">'CREDITOS_ACTIVOS'</span>] <span class="op">=</span> bureau_agg[<span class="st">'CREDITOS_ACTIVOS'</span>].fillna(<span class="dv">0</span>)</span>
+<span id="cb3-67"><a href="#cb3-67" aria-hidden="true" tabindex="-1"></a>bureau_agg[<span class="st">'CREDITOS_CERRADOS'</span>] <span class="op">=</span> bureau_agg[<span class="st">'CREDITOS_CERRADOS'</span>].fillna(<span class="dv">0</span>)</span>
+<span id="cb3-68"><a href="#cb3-68" aria-hidden="true" tabindex="-1"></a>bureau_agg[<span class="st">'TIENE_IMPAGOS'</span>] <span class="op">=</span> (bureau_agg[<span class="st">'MAX_DIAS_MORA'</span>] <span class="op">&gt;</span> <span class="dv">0</span>).astype(<span class="bu">int</span>)</span>
+<span id="cb3-69"><a href="#cb3-69" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-70"><a href="#cb3-70" aria-hidden="true" tabindex="-1"></a><span class="co"># Merge con df principal</span></span>
+<span id="cb3-71"><a href="#cb3-71" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> df.merge(bureau_agg, on<span class="op">=</span><span class="st">'SK_ID_CURR'</span>, how<span class="op">=</span><span class="st">'left'</span>)</span>
+<span id="cb3-72"><a href="#cb3-72" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-73"><a href="#cb3-73" aria-hidden="true" tabindex="-1"></a><span class="co"># Llenar NaN</span></span>
+<span id="cb3-74"><a href="#cb3-74" aria-hidden="true" tabindex="-1"></a>bureau_fill_cols <span class="op">=</span> [<span class="st">'TOTAL_CREDITO_DISPONIBLE'</span>, <span class="st">'TOTAL_CREDITO_OTORGADO'</span>, </span>
+<span id="cb3-75"><a href="#cb3-75" aria-hidden="true" tabindex="-1"></a>                    <span class="st">'TOTAL_DEUDA_ACTUAL'</span>, <span class="st">'CREDITOS_ACTIVOS'</span>, <span class="st">'CREDITOS_CERRADOS'</span>,</span>
+<span id="cb3-76"><a href="#cb3-76" aria-hidden="true" tabindex="-1"></a>                    <span class="st">'MAX_DIAS_MORA'</span>, <span class="st">'TIENE_IMPAGOS'</span>, <span class="st">'CANTIDAD_CREDITOS_BURO'</span>]</span>
+<span id="cb3-77"><a href="#cb3-77" aria-hidden="true" tabindex="-1"></a>df[bureau_fill_cols] <span class="op">=</span> df[bureau_fill_cols].fillna(<span class="dv">0</span>)</span>
+<span id="cb3-78"><a href="#cb3-78" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-79"><a href="#cb3-79" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'ES_PRIMER_CREDITO'</span>] <span class="op">=</span> (df[<span class="st">'CANTIDAD_CREDITOS_BURO'</span>] <span class="op">==</span> <span class="dv">0</span>).astype(<span class="bu">int</span>)</span>
+<span id="cb3-80"><a href="#cb3-80" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-81"><a href="#cb3-81" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-82"><a href="#cb3-82" aria-hidden="true" tabindex="-1"></a>bureau_balance_merged <span class="op">=</span> bureau_balance.merge(</span>
+<span id="cb3-83"><a href="#cb3-83" aria-hidden="true" tabindex="-1"></a>    bureau[[<span class="st">'SK_ID_BUREAU'</span>, <span class="st">'SK_ID_CURR'</span>]], </span>
+<span id="cb3-84"><a href="#cb3-84" aria-hidden="true" tabindex="-1"></a>    on<span class="op">=</span><span class="st">'SK_ID_BUREAU'</span>, </span>
+<span id="cb3-85"><a href="#cb3-85" aria-hidden="true" tabindex="-1"></a>    how<span class="op">=</span><span class="st">'left'</span></span>
+<span id="cb3-86"><a href="#cb3-86" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb3-87"><a href="#cb3-87" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-88"><a href="#cb3-88" aria-hidden="true" tabindex="-1"></a>mora_status <span class="op">=</span> [<span class="st">'1'</span>, <span class="st">'2'</span>, <span class="st">'3'</span>, <span class="st">'4'</span>, <span class="st">'5'</span>]</span>
+<span id="cb3-89"><a href="#cb3-89" aria-hidden="true" tabindex="-1"></a>bureau_balance_merged[<span class="st">'EN_MORA'</span>] <span class="op">=</span> bureau_balance_merged[<span class="st">'STATUS'</span>].isin(mora_status).astype(<span class="bu">int</span>)</span>
+<span id="cb3-90"><a href="#cb3-90" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-91"><a href="#cb3-91" aria-hidden="true" tabindex="-1"></a>balance_agg <span class="op">=</span> bureau_balance_merged.groupby(<span class="st">'SK_ID_CURR'</span>).agg({</span>
+<span id="cb3-92"><a href="#cb3-92" aria-hidden="true" tabindex="-1"></a>    <span class="st">'EN_MORA'</span>: <span class="st">'sum'</span>,</span>
+<span id="cb3-93"><a href="#cb3-93" aria-hidden="true" tabindex="-1"></a>    <span class="st">'STATUS'</span>: <span class="st">'count'</span></span>
+<span id="cb3-94"><a href="#cb3-94" aria-hidden="true" tabindex="-1"></a>}).reset_index()</span>
+<span id="cb3-95"><a href="#cb3-95" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-96"><a href="#cb3-96" aria-hidden="true" tabindex="-1"></a>balance_agg.columns <span class="op">=</span> [<span class="st">'SK_ID_CURR'</span>, <span class="st">'MESES_CON_MORA'</span>, <span class="st">'TOTAL_MESES'</span>]</span>
+<span id="cb3-97"><a href="#cb3-97" aria-hidden="true" tabindex="-1"></a>balance_agg[<span class="st">'PCT_MESES_MORA'</span>] <span class="op">=</span> (balance_agg[<span class="st">'MESES_CON_MORA'</span>] <span class="op">/</span> balance_agg[<span class="st">'TOTAL_MESES'</span>]) <span class="op">*</span> <span class="dv">100</span></span>
+<span id="cb3-98"><a href="#cb3-98" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-99"><a href="#cb3-99" aria-hidden="true" tabindex="-1"></a><span class="co"># Créditos con impago</span></span>
+<span id="cb3-100"><a href="#cb3-100" aria-hidden="true" tabindex="-1"></a>creditos_impago <span class="op">=</span> bureau_balance_merged.groupby([<span class="st">'SK_ID_CURR'</span>, <span class="st">'SK_ID_BUREAU'</span>])[<span class="st">'EN_MORA'</span>].<span class="bu">max</span>().reset_index()</span>
+<span id="cb3-101"><a href="#cb3-101" aria-hidden="true" tabindex="-1"></a>creditos_impago_count <span class="op">=</span> creditos_impago.groupby(<span class="st">'SK_ID_CURR'</span>)[<span class="st">'EN_MORA'</span>].<span class="bu">sum</span>().reset_index()</span>
+<span id="cb3-102"><a href="#cb3-102" aria-hidden="true" tabindex="-1"></a>creditos_impago_count.columns <span class="op">=</span> [<span class="st">'SK_ID_CURR'</span>, <span class="st">'CREDITOS_CON_IMPAGO'</span>]</span>
+<span id="cb3-103"><a href="#cb3-103" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-104"><a href="#cb3-104" aria-hidden="true" tabindex="-1"></a>balance_agg <span class="op">=</span> balance_agg.merge(creditos_impago_count, on<span class="op">=</span><span class="st">'SK_ID_CURR'</span>, how<span class="op">=</span><span class="st">'left'</span>)</span>
+<span id="cb3-105"><a href="#cb3-105" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-106"><a href="#cb3-106" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> df.merge(balance_agg[[<span class="st">'SK_ID_CURR'</span>, <span class="st">'MESES_CON_MORA'</span>, <span class="st">'PCT_MESES_MORA'</span>, <span class="st">'CREDITOS_CON_IMPAGO'</span>]], </span>
+<span id="cb3-107"><a href="#cb3-107" aria-hidden="true" tabindex="-1"></a>              on<span class="op">=</span><span class="st">'SK_ID_CURR'</span>, how<span class="op">=</span><span class="st">'left'</span>)</span>
+<span id="cb3-108"><a href="#cb3-108" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-109"><a href="#cb3-109" aria-hidden="true" tabindex="-1"></a>df[[<span class="st">'MESES_CON_MORA'</span>, <span class="st">'PCT_MESES_MORA'</span>, <span class="st">'CREDITOS_CON_IMPAGO'</span>]] <span class="op">=</span> <span class="op">\</span></span>
+<span id="cb3-110"><a href="#cb3-110" aria-hidden="true" tabindex="-1"></a>    df[[<span class="st">'MESES_CON_MORA'</span>, <span class="st">'PCT_MESES_MORA'</span>, <span class="st">'CREDITOS_CON_IMPAGO'</span>]].fillna(<span class="dv">0</span>)</span>
+<span id="cb3-111"><a href="#cb3-111" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-112"><a href="#cb3-112" aria-hidden="true" tabindex="-1"></a>prev_agg <span class="op">=</span> prev_app.groupby(<span class="st">'SK_ID_CURR'</span>).agg({</span>
+<span id="cb3-113"><a href="#cb3-113" aria-hidden="true" tabindex="-1"></a>    <span class="st">'SK_ID_PREV'</span>: <span class="st">'count'</span>,</span>
+<span id="cb3-114"><a href="#cb3-114" aria-hidden="true" tabindex="-1"></a>    <span class="st">'RATE_INTEREST_PRIMARY'</span>: <span class="st">'mean'</span>,</span>
+<span id="cb3-115"><a href="#cb3-115" aria-hidden="true" tabindex="-1"></a>    <span class="st">'CNT_PAYMENT'</span>: <span class="st">'mean'</span>,</span>
+<span id="cb3-116"><a href="#cb3-116" aria-hidden="true" tabindex="-1"></a>    <span class="st">'AMT_CREDIT'</span>: [<span class="st">'mean'</span>, <span class="st">'sum'</span>]</span>
+<span id="cb3-117"><a href="#cb3-117" aria-hidden="true" tabindex="-1"></a>}).reset_index()</span>
+<span id="cb3-118"><a href="#cb3-118" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-119"><a href="#cb3-119" aria-hidden="true" tabindex="-1"></a>prev_agg.columns <span class="op">=</span> [<span class="st">'SK_ID_CURR'</span>, <span class="st">'NUM_PRESTAMOS_PREVIOS'</span>, <span class="st">'TASA_INTERES_PROMEDIO'</span>,</span>
+<span id="cb3-120"><a href="#cb3-120" aria-hidden="true" tabindex="-1"></a>                    <span class="st">'PLAZO_PROMEDIO'</span>, <span class="st">'MONTO_PROMEDIO_PREVIO'</span>, <span class="st">'TOTAL_CREDITO_HISTORICO'</span>]</span>
+<span id="cb3-121"><a href="#cb3-121" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-122"><a href="#cb3-122" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> df.merge(prev_agg, on<span class="op">=</span><span class="st">'SK_ID_CURR'</span>, how<span class="op">=</span><span class="st">'left'</span>)</span>
+<span id="cb3-123"><a href="#cb3-123" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-124"><a href="#cb3-124" aria-hidden="true" tabindex="-1"></a>df[[<span class="st">'NUM_PRESTAMOS_PREVIOS'</span>, <span class="st">'MONTO_PROMEDIO_PREVIO'</span>, <span class="st">'TOTAL_CREDITO_HISTORICO'</span>]] <span class="op">=</span> <span class="op">\</span></span>
+<span id="cb3-125"><a href="#cb3-125" aria-hidden="true" tabindex="-1"></a>    df[[<span class="st">'NUM_PRESTAMOS_PREVIOS'</span>, <span class="st">'MONTO_PROMEDIO_PREVIO'</span>, <span class="st">'TOTAL_CREDITO_HISTORICO'</span>]].fillna(<span class="dv">0</span>)</span>
+<span id="cb3-126"><a href="#cb3-126" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-127"><a href="#cb3-127" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-128"><a href="#cb3-128" aria-hidden="true" tabindex="-1"></a>valid_installments <span class="op">=</span> installments[installments[<span class="st">'AMT_INSTALMENT'</span>] <span class="op">&gt;</span> <span class="dv">0</span>].copy()</span>
+<span id="cb3-129"><a href="#cb3-129" aria-hidden="true" tabindex="-1"></a>valid_installments[<span class="st">'PAYMENT_RATIO'</span>] <span class="op">=</span> valid_installments[<span class="st">'AMT_PAYMENT'</span>] <span class="op">/</span> valid_installments[<span class="st">'AMT_INSTALMENT'</span>]</span>
+<span id="cb3-130"><a href="#cb3-130" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-131"><a href="#cb3-131" aria-hidden="true" tabindex="-1"></a>install_agg <span class="op">=</span> valid_installments.groupby(<span class="st">'SK_ID_CURR'</span>)[<span class="st">'PAYMENT_RATIO'</span>].mean().reset_index()</span>
+<span id="cb3-132"><a href="#cb3-132" aria-hidden="true" tabindex="-1"></a>install_agg.columns <span class="op">=</span> [<span class="st">'SK_ID_CURR'</span>, <span class="st">'RATIO_PAGO_CUOTA'</span>]</span>
+<span id="cb3-133"><a href="#cb3-133" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-134"><a href="#cb3-134" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> df.merge(install_agg, on<span class="op">=</span><span class="st">'SK_ID_CURR'</span>, how<span class="op">=</span><span class="st">'left'</span>)</span>
+<span id="cb3-135"><a href="#cb3-135" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-136"><a href="#cb3-136" aria-hidden="true" tabindex="-1"></a>valid_cc <span class="op">=</span> credit_card[credit_card[<span class="st">'AMT_INST_MIN_REGULARITY'</span>] <span class="op">&gt;</span> <span class="dv">0</span>].copy()</span>
+<span id="cb3-137"><a href="#cb3-137" aria-hidden="true" tabindex="-1"></a>valid_cc[<span class="st">'PAYMENT_MIN_RATIO'</span>] <span class="op">=</span> valid_cc[<span class="st">'AMT_PAYMENT_CURRENT'</span>] <span class="op">/</span> valid_cc[<span class="st">'AMT_INST_MIN_REGULARITY'</span>]</span>
+<span id="cb3-138"><a href="#cb3-138" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-139"><a href="#cb3-139" aria-hidden="true" tabindex="-1"></a>cc_agg <span class="op">=</span> valid_cc.groupby(<span class="st">'SK_ID_CURR'</span>)[<span class="st">'PAYMENT_MIN_RATIO'</span>].mean().reset_index()</span>
+<span id="cb3-140"><a href="#cb3-140" aria-hidden="true" tabindex="-1"></a>cc_agg.columns <span class="op">=</span> [<span class="st">'SK_ID_CURR'</span>, <span class="st">'RATIO_PAGO_MINIMO_TC'</span>]</span>
+<span id="cb3-141"><a href="#cb3-141" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-142"><a href="#cb3-142" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> df.merge(cc_agg, on<span class="op">=</span><span class="st">'SK_ID_CURR'</span>, how<span class="op">=</span><span class="st">'left'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>La lógica de la ingeniería de variables que implementamos se puede resumir en cuatro bloques principales:</p>
+<ol type="1">
+<li><p><strong>Perfil socio-demográfico y capacidad de pago</strong><br>
+A partir de <code>application_train</code> construimos indicadores de edad (<code>EDAD_ANOS</code>), estructura familiar (<code>CNT_CHILDREN</code>, <code>CNT_FAM_MEMBERS</code>) e ingresos (<code>AMT_INCOME_TOTAL</code>, <code>INGRESO_PER_CAPITA</code>). Estos proxies buscan capturar la <strong>capacidad de generar flujo de efectivo</strong> para servir la deuda.</p></li>
+<li><p><strong>Carga de deuda y uso del crédito</strong><br>
+De las tablas de buró (<code>bureau</code>, <code>bureau_balance</code>) extraemos el nivel de crédito actual (<code>TOTAL_DEUDA_ACTUAL</code>, <code>TOTAL_CREDITO_OTORGADO</code>), el número de créditos activos (<code>CREDITOS_ACTIVOS</code>) y la historia de mora (<code>PCT_MESES_MORA</code>, <code>CREDITOS_CON_IMPAGO</code>). Estas variables resumen el <strong>apetito de endeudamiento</strong> y el cumplimiento pasado del cliente.</p></li>
+<li><p><strong>Condiciones crediticias históricas</strong><br>
+De <code>previous_application</code> construimos variables como <code>TASA_INTERES_PROMEDIO</code>, <code>PLAZO_PROMEDIO</code> y <code>TOTAL_CREDITO_HISTORICO</code>. El objetivo es capturar el tipo de condiciones bajo las cuales el cliente ha tomado crédito en el pasado, lo cual puede estar correlacionado con su riesgo (p.ej., tasas más altas pueden ser reflejo de mayor riesgo percibido).</p></li>
+<li><p><strong>Comportamiento de pago reciente</strong><br>
+A partir de <code>installments_payments</code> y <code>credit_card_balance</code> construimos ratios como <code>RATIO_PAGO_CUOTA</code> y <code>RATIO_PAGO_MINIMO_TC</code>, que miden qué tan sistemáticamente el cliente paga sus cuotas completas o sólo mínimos. Estas son variables de <strong>conducta reciente</strong>, muy relevantes para anticipar problemas de liquidez.</p></li>
+</ol>
+<p>En conjunto, el dataset final combina información estática (perfil del cliente al momento de la solicitud) con información histórica dinámica (trayectoria de uso y pago de crédito), alineado con el grafo causal propuesto.</p>
+<p>Una observación importante es que muchas de las variables nuevas presentan valores faltantes (<code>NaN</code>). Esto puede deberse a que ciertos clientes no tienen historial en buró o no han tenido créditos previos, lo que limita la información disponible para su análisis.</p>
+</section>
+<section id="distribución-de-la-variable-objetivo" class="level2" data-number="3.2">
+<h2 data-number="3.2" class="anchored" data-anchor-id="distribución-de-la-variable-objetivo"><span class="header-section-number">3.2</span> Distribución de la Variable Objetivo</h2>
+<div id="cell-fig-target-dist" class="cell" data-execution_count="5">
+<div class="cell-output cell-output-display">
+<div id="fig-target-dist" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-target-dist-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="reporte-final_files/figure-html/fig-target-dist-output-1.png" width="756" height="469" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-target-dist-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Distribución de la variable TARGET (desbalance de clases)
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>La tasa de default observada (~8%) es consistente con portafolios de consumo relativamente amplios y diversificados. Desde el punto de vista de modelación, este <strong>desbalance de clases</strong> implica que:</p>
+<ul>
+<li>Un modelo que ignore la clase minoritaria puede mostrar métricas aparentemente buenas (p.&nbsp;ej. alta accuracy), pero ser inútil para <strong>detectar clientes realmente riesgosos</strong>.</li>
+<li>La función de pérdida “natural” del modelo está desbalanceada: equivocarse en un cliente “default” (falso negativo) es mucho más costoso que equivocarse en un “no default”.</li>
+</ul>
+<p>Por ello, adoptamos dos estrategias complementarias:</p>
+<ol type="1">
+<li>Ajustar el modelo con pesos de clase (<code>class_weight='balanced'</code> o <code>scale_pos_weight</code>), de modo que los errores en la clase positiva tengan mayor penalización.</li>
+<li>Enfocarnos en métricas más sensibles al desbalance, como <strong>PR-AUC</strong> (Average Precision), <strong>Recall</strong> y análisis por <strong>deciles de score</strong>, en lugar de depender únicamente de ROC-AUC o accuracy.</li>
+</ol>
+</section>
+<section id="análisis-de-correlaciones" class="level2" data-number="3.3">
+<h2 data-number="3.3" class="anchored" data-anchor-id="análisis-de-correlaciones"><span class="header-section-number">3.3</span> Análisis de Correlaciones</h2>
+<div id="cell-fig-correlation-heatmap" class="cell" data-execution_count="6">
+<div class="cell-output cell-output-display">
+<div id="fig-correlation-heatmap" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-correlation-heatmap-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="reporte-final_files/figure-html/fig-correlation-heatmap-output-1.png" width="795" height="1331" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-correlation-heatmap-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Heatmap de correlaciones entre variables numéricas
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>El análisis de correlaciones muestra que muchas variables están fuertemente relacionadas entre sí, especialmente:</p>
+<ul>
+<li>Montos monetarios derivados de la misma base (<code>AMT_CREDIT</code>, <code>AMT_ANNUITY</code>, <code>AMT_GOODS_PRICE</code>, etc.).</li>
+<li>Scores externos (<code>EXT_SOURCE_1/2/3</code>) que, aunque provienen de fuentes distintas, tienden a moverse juntos.</li>
+</ul>
+<p>En modelos lineales como la regresión logística, la <strong>multicolinealidad</strong> puede inflar varianzas de los coeficientes y dificultar la interpretación. Aunque los modelos de árboles son más robustos a este problema, mantener demasiadas variables redundantes puede:</p>
+<ul>
+<li>Introducir ruido innecesario.</li>
+<li>Aumentar el costo computacional.</li>
+<li>Complicar la comunicación de resultados.</li>
+</ul>
+<p>Por ello, en la etapa de <strong>selección de variables</strong> optamos por:</p>
+<ul>
+<li>Conservar métricas sintéticas más interpretables (p.ej. <code>SCORE_PROMEDIO</code>, <code>CREDIT_INCOME_RATIO</code>).</li>
+<li>Eliminar componentes redundantes (p.ej. <code>EXT_SOURCE_1/2/3</code> por separado, o montos crudos que ya están en ratios).</li>
+<li>Mantener un subconjunto manejable de variables con significado económico claro, manteniendo el foco en <strong>calidad sobre cantidad</strong> de features.</li>
+</ul>
+</section>
+<section id="selección-de-variables" class="level2" data-number="3.4">
+<h2 data-number="3.4" class="anchored" data-anchor-id="selección-de-variables"><span class="header-section-number">3.4</span> Selección de Variables</h2>
+<p>Eliminamos variables redundantes para reducir la multicolinealidad:</p>
+<div id="variable-selection" class="cell" data-execution_count="8">
+<details class="code-fold">
+<summary>Ver código de selección de variables</summary>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Drop de variables redundantes/derivadas</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> df.drop(columns<span class="op">=</span>[</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Edad</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">'DAYS_BIRTH'</span>,</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Montos base</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">'AMT_CREDIT'</span>,</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">'AMT_INCOME_TOTAL'</span>,</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">'AMT_ANNUITY'</span>,</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Scores individuales</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">'EXT_SOURCE_1'</span>,</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">'EXT_SOURCE_2'</span>,</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">'EXT_SOURCE_3'</span>,</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Familia</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>    <span class="st">'CNT_FAM_MEMBERS'</span>,</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Activos</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>    <span class="st">'FLAG_OWN_CAR'</span>,</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>    <span class="st">'FLAG_OWN_REALTY'</span>,</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Componentes de ratios</span></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>    <span class="st">'MESES_CON_MORA'</span>,</span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Variables binarias derivadas</span></span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>    <span class="st">'TIENE_IMPAGOS'</span>,</span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>    <span class="st">'ES_PRIMER_CREDITO'</span>,</span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Créditos buró</span></span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>    <span class="st">'CANTIDAD_CREDITOS_BURO'</span></span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>])</span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Variables restantes: </span><span class="sc">{</span>df<span class="sc">.</span>shape[<span class="dv">1</span>]<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Observaciones: </span><span class="sc">{</span>df<span class="sc">.</span>shape[<span class="dv">0</span>]<span class="sc">:,}</span><span class="ss">"</span>)</span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Variables en el modelo final:"</span>)</span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, col <span class="kw">in</span> <span class="bu">enumerate</span>(df.columns, <span class="dv">1</span>):</span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> col <span class="kw">not</span> <span class="kw">in</span> [<span class="st">'SK_ID_CURR'</span>, <span class="st">'TARGET'</span>]:</span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"  </span><span class="sc">{</span>i<span class="op">-</span><span class="dv">2</span><span class="sc">}</span><span class="ss">. </span><span class="sc">{</span>col<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Variables restantes: 27
+Observaciones: 307,511
+
+Variables en el modelo final:
+  1. EDAD_ANOS
+  2. SCORE_PROMEDIO
+  3. CREDIT_INCOME_RATIO
+  4. NAME_FAMILY_STATUS
+  5. CNT_CHILDREN
+  6. CODE_GENDER
+  7. NAME_EDUCATION_TYPE
+  8. INGRESO_PER_CAPITA
+  9. NUM_ACTIVOS
+  10. TOTAL_CONSULTAS_BURO
+  11. TOTAL_CREDITO_DISPONIBLE
+  12. TOTAL_CREDITO_OTORGADO
+  13. TOTAL_DEUDA_ACTUAL
+  14. MAX_DIAS_MORA
+  15. CREDITOS_ACTIVOS
+  16. CREDITOS_CERRADOS
+  17. PCT_MESES_MORA
+  18. CREDITOS_CON_IMPAGO
+  19. NUM_PRESTAMOS_PREVIOS
+  20. TASA_INTERES_PROMEDIO
+  21. PLAZO_PROMEDIO
+  22. MONTO_PROMEDIO_PREVIO
+  23. TOTAL_CREDITO_HISTORICO
+  24. RATIO_PAGO_CUOTA
+  25. RATIO_PAGO_MINIMO_TC</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="regresión-logística" class="level1" data-number="4">
+<h1 data-number="4"><span class="header-section-number">4</span> Regresión Logística</h1>
+<section id="teoría" class="level2" data-number="4.1">
+<h2 data-number="4.1" class="anchored" data-anchor-id="teoría"><span class="header-section-number">4.1</span> Teoría</h2>
+<section id="función-sigmoide" class="level3" data-number="4.1.1">
+<h3 data-number="4.1.1" class="anchored" data-anchor-id="función-sigmoide"><span class="header-section-number">4.1.1</span> Función Sigmoide</h3>
+<p>La regresión logística es un modelo de clasificación que estima la probabilidad de que una observación pertenezca a una clase particular. El modelo utiliza la <strong>función sigmoide</strong> (o logística) para transformar una combinación lineal de las variables predictoras en una probabilidad:</p>
+<p><span class="math display">\[
+P(Y=1|X) = \sigma(z) = \frac{1}{1 + e^{-z}}
+\]</span></p>
+<p>Donde: <span class="math display">\[
+z = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + ... + \beta_p X_p
+\]</span></p>
+</section>
+<section id="interpretación-de-coeficientes" class="level3" data-number="4.1.2">
+<h3 data-number="4.1.2" class="anchored" data-anchor-id="interpretación-de-coeficientes"><span class="header-section-number">4.1.2</span> Interpretación de Coeficientes</h3>
+<p>Los coeficientes <span class="math inline">\(\beta_j\)</span> se interpretan en términos de <strong>odds ratios</strong>:</p>
+<p><span class="math display">\[
+\text{OR}_j = e^{\beta_j}
+\]</span></p>
+<ul>
+<li>Si <span class="math inline">\(\beta_j &gt; 0\)</span>: La variable aumenta la probabilidad de default</li>
+<li>Si <span class="math inline">\(\beta_j &lt; 0\)</span>: La variable disminuye la probabilidad de default</li>
+<li>Si <span class="math inline">\(\beta_j = 0\)</span>: La variable no tiene efecto</li>
+</ul>
+</section>
+<section id="función-de-pérdida-log-loss-entropía-cruzada-binaria" class="level3" data-number="4.1.3">
+<h3 data-number="4.1.3" class="anchored" data-anchor-id="función-de-pérdida-log-loss-entropía-cruzada-binaria"><span class="header-section-number">4.1.3</span> Función de Pérdida: Log-Loss (Entropía Cruzada Binaria)</h3>
+<p>Los parámetros se estiman minimizando la <strong>log-loss</strong> (también conocida como entropía cruzada binaria):</p>
+<p><span class="math display">\[
+\mathcal{L}(\beta) = -\frac{1}{n} \sum_{i=1}^{n} \left[ y_i \log(\hat{p}_i) + (1-y_i) \log(1-\hat{p}_i) \right]
+\]</span></p>
+</section>
+<section id="regularización" class="level3" data-number="4.1.4">
+<h3 data-number="4.1.4" class="anchored" data-anchor-id="regularización"><span class="header-section-number">4.1.4</span> Regularización</h3>
+<p>Para prevenir el overfitting, aplicamos <strong>regularización L2 (Ridge)</strong>:</p>
+<p><span class="math display">\[
+\mathcal{L}_{reg}(\beta) = \mathcal{L}(\beta) + \lambda \sum_{j=1}^{p} \beta_j^2
+\]</span></p>
+</section>
+</section>
+<section id="entrenamiento-del-modelo" class="level2" data-number="4.2">
+<h2 data-number="4.2" class="anchored" data-anchor-id="entrenamiento-del-modelo"><span class="header-section-number">4.2</span> Entrenamiento del Modelo</h2>
+<div id="logistic-regression" class="cell" data-execution_count="10">
+<details class="code-fold">
+<summary>Ver código del modelo de Regresión Logística</summary>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Configuración</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>TEST_SIZE <span class="op">=</span> <span class="fl">0.2</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>RANDOM_STATE <span class="op">=</span> <span class="dv">42</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>CV_FOLDS <span class="op">=</span> <span class="dv">5</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"="</span><span class="op">*</span><span class="dv">80</span>)</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"MODELO DE REGRESION LOGISTICA - HOME CREDIT DEFAULT RISK"</span>)</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"="</span><span class="op">*</span><span class="dv">80</span>)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Preparación de datos</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Preparando datos..."</span>)</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> df.drop([<span class="st">'SK_ID_CURR'</span>, <span class="st">'TARGET'</span>], axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> df[<span class="st">'TARGET'</span>]</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>numeric_vars <span class="op">=</span> X.select_dtypes(include<span class="op">=</span>[np.number]).columns.tolist()</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>categorical_vars <span class="op">=</span> X.select_dtypes(include<span class="op">=</span>[<span class="st">'object'</span>]).columns.tolist()</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Variables predictoras: </span><span class="sc">{</span>X<span class="sc">.</span>shape[<span class="dv">1</span>]<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Variables numericas: </span><span class="sc">{</span><span class="bu">len</span>(numeric_vars)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Variables categoricas: </span><span class="sc">{</span><span class="bu">len</span>(categorical_vars)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a><span class="co"># Manejo de valores faltantes</span></span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Imputando valores faltantes..."</span>)</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> col <span class="kw">in</span> numeric_vars:</span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> X[col].isnull().<span class="bu">sum</span>() <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>        X[col].fillna(X[col].median(), inplace<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> col <span class="kw">in</span> categorical_vars:</span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> X[col].isnull().<span class="bu">sum</span>() <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>        X[col].fillna(X[col].mode()[<span class="dv">0</span>], inplace<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a><span class="co"># Codificación de variables categóricas</span></span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Codificando variables categoricas..."</span>)</span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a>label_encoders_lr <span class="op">=</span> {}</span>
+<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> col <span class="kw">in</span> categorical_vars:</span>
+<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a>    le <span class="op">=</span> LabelEncoder()</span>
+<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a>    X[col] <span class="op">=</span> le.fit_transform(X[col].astype(<span class="bu">str</span>))</span>
+<span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a>    label_encoders_lr[col] <span class="op">=</span> le</span>
+<span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-41"><a href="#cb6-41" aria-hidden="true" tabindex="-1"></a><span class="co"># División Train/Test</span></span>
+<span id="cb6-42"><a href="#cb6-42" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Dividiendo datos en Train/Test..."</span>)</span>
+<span id="cb6-43"><a href="#cb6-43" aria-hidden="true" tabindex="-1"></a>X_train_lr, X_test_lr, y_train_lr, y_test_lr <span class="op">=</span> train_test_split(</span>
+<span id="cb6-44"><a href="#cb6-44" aria-hidden="true" tabindex="-1"></a>    X, y, </span>
+<span id="cb6-45"><a href="#cb6-45" aria-hidden="true" tabindex="-1"></a>    test_size<span class="op">=</span>TEST_SIZE,</span>
+<span id="cb6-46"><a href="#cb6-46" aria-hidden="true" tabindex="-1"></a>    random_state<span class="op">=</span>RANDOM_STATE,</span>
+<span id="cb6-47"><a href="#cb6-47" aria-hidden="true" tabindex="-1"></a>    stratify<span class="op">=</span>y</span>
+<span id="cb6-48"><a href="#cb6-48" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-49"><a href="#cb6-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-50"><a href="#cb6-50" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Train set: </span><span class="sc">{</span>X_train_lr<span class="sc">.</span>shape[<span class="dv">0</span>]<span class="sc">:,}</span><span class="ss"> usuarios (</span><span class="sc">{</span>X_train_lr<span class="sc">.</span>shape[<span class="dv">0</span>]<span class="op">/</span><span class="bu">len</span>(X)<span class="op">*</span><span class="dv">100</span><span class="sc">:.1f}</span><span class="ss">%)"</span>)</span>
+<span id="cb6-51"><a href="#cb6-51" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Test set:  </span><span class="sc">{</span>X_test_lr<span class="sc">.</span>shape[<span class="dv">0</span>]<span class="sc">:,}</span><span class="ss"> usuarios (</span><span class="sc">{</span>X_test_lr<span class="sc">.</span>shape[<span class="dv">0</span>]<span class="op">/</span><span class="bu">len</span>(X)<span class="op">*</span><span class="dv">100</span><span class="sc">:.1f}</span><span class="ss">%)"</span>)</span>
+<span id="cb6-52"><a href="#cb6-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-53"><a href="#cb6-53" aria-hidden="true" tabindex="-1"></a><span class="co"># Normalización</span></span>
+<span id="cb6-54"><a href="#cb6-54" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Normalizando variables (StandardScaler)..."</span>)</span>
+<span id="cb6-55"><a href="#cb6-55" aria-hidden="true" tabindex="-1"></a>scaler_lr <span class="op">=</span> StandardScaler()</span>
+<span id="cb6-56"><a href="#cb6-56" aria-hidden="true" tabindex="-1"></a>X_train_lr_scaled <span class="op">=</span> scaler_lr.fit_transform(X_train_lr)</span>
+<span id="cb6-57"><a href="#cb6-57" aria-hidden="true" tabindex="-1"></a>X_test_lr_scaled <span class="op">=</span> scaler_lr.transform(X_test_lr)</span>
+<span id="cb6-58"><a href="#cb6-58" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-59"><a href="#cb6-59" aria-hidden="true" tabindex="-1"></a><span class="co"># Entrenamiento</span></span>
+<span id="cb6-60"><a href="#cb6-60" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Entrenando Regresion Logistica..."</span>)</span>
+<span id="cb6-61"><a href="#cb6-61" aria-hidden="true" tabindex="-1"></a>model_lr <span class="op">=</span> LogisticRegression(</span>
+<span id="cb6-62"><a href="#cb6-62" aria-hidden="true" tabindex="-1"></a>    penalty<span class="op">=</span><span class="st">'l2'</span>,</span>
+<span id="cb6-63"><a href="#cb6-63" aria-hidden="true" tabindex="-1"></a>    C<span class="op">=</span><span class="fl">1.0</span>,</span>
+<span id="cb6-64"><a href="#cb6-64" aria-hidden="true" tabindex="-1"></a>    solver<span class="op">=</span><span class="st">'lbfgs'</span>,</span>
+<span id="cb6-65"><a href="#cb6-65" aria-hidden="true" tabindex="-1"></a>    max_iter<span class="op">=</span><span class="dv">1000</span>,</span>
+<span id="cb6-66"><a href="#cb6-66" aria-hidden="true" tabindex="-1"></a>    class_weight<span class="op">=</span><span class="st">'balanced'</span>,</span>
+<span id="cb6-67"><a href="#cb6-67" aria-hidden="true" tabindex="-1"></a>    random_state<span class="op">=</span>RANDOM_STATE,</span>
+<span id="cb6-68"><a href="#cb6-68" aria-hidden="true" tabindex="-1"></a>    n_jobs<span class="op">=-</span><span class="dv">1</span></span>
+<span id="cb6-69"><a href="#cb6-69" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-70"><a href="#cb6-70" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-71"><a href="#cb6-71" aria-hidden="true" tabindex="-1"></a>model_lr.fit(X_train_lr_scaled, y_train_lr)</span>
+<span id="cb6-72"><a href="#cb6-72" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"✓ Modelo entrenado exitosamente"</span>)</span>
+<span id="cb6-73"><a href="#cb6-73" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-74"><a href="#cb6-74" aria-hidden="true" tabindex="-1"></a><span class="co"># Validación Cruzada</span></span>
+<span id="cb6-75"><a href="#cb6-75" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Validacion Cruzada (</span><span class="sc">{</span>CV_FOLDS<span class="sc">}</span><span class="ss">-fold)..."</span>)</span>
+<span id="cb6-76"><a href="#cb6-76" aria-hidden="true" tabindex="-1"></a>cv_scores_lr <span class="op">=</span> cross_val_score(</span>
+<span id="cb6-77"><a href="#cb6-77" aria-hidden="true" tabindex="-1"></a>    model_lr, X_train_lr_scaled, y_train_lr, </span>
+<span id="cb6-78"><a href="#cb6-78" aria-hidden="true" tabindex="-1"></a>    cv<span class="op">=</span>CV_FOLDS, </span>
+<span id="cb6-79"><a href="#cb6-79" aria-hidden="true" tabindex="-1"></a>    scoring<span class="op">=</span><span class="st">'roc_auc'</span>,</span>
+<span id="cb6-80"><a href="#cb6-80" aria-hidden="true" tabindex="-1"></a>    n_jobs<span class="op">=-</span><span class="dv">1</span></span>
+<span id="cb6-81"><a href="#cb6-81" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-82"><a href="#cb6-82" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"ROC-AUC por fold: </span><span class="sc">{</span>cv_scores_lr<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb6-83"><a href="#cb6-83" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Media: </span><span class="sc">{</span>cv_scores_lr<span class="sc">.</span>mean()<span class="sc">:.4f}</span><span class="ss"> (+/- </span><span class="sc">{</span>cv_scores_lr<span class="sc">.</span>std()<span class="sc">:.4f}</span><span class="ss">)"</span>)</span>
+<span id="cb6-84"><a href="#cb6-84" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-85"><a href="#cb6-85" aria-hidden="true" tabindex="-1"></a><span class="co"># Predicciones</span></span>
+<span id="cb6-86"><a href="#cb6-86" aria-hidden="true" tabindex="-1"></a>y_train_pred_lr <span class="op">=</span> model_lr.predict(X_train_lr_scaled)</span>
+<span id="cb6-87"><a href="#cb6-87" aria-hidden="true" tabindex="-1"></a>y_train_proba_lr <span class="op">=</span> model_lr.predict_proba(X_train_lr_scaled)[:, <span class="dv">1</span>]</span>
+<span id="cb6-88"><a href="#cb6-88" aria-hidden="true" tabindex="-1"></a>y_test_pred_lr <span class="op">=</span> model_lr.predict(X_test_lr_scaled)</span>
+<span id="cb6-89"><a href="#cb6-89" aria-hidden="true" tabindex="-1"></a>y_test_proba_lr <span class="op">=</span> model_lr.predict_proba(X_test_lr_scaled)[:, <span class="dv">1</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>================================================================================
+MODELO DE REGRESION LOGISTICA - HOME CREDIT DEFAULT RISK
+================================================================================
+
+Preparando datos...
+Variables predictoras: 25
+Variables numericas: 22
+Variables categoricas: 3
+
+Imputando valores faltantes...
+Codificando variables categoricas...
+
+Dividiendo datos en Train/Test...
+Train set: 246,008 usuarios (80.0%)
+Test set:  61,503 usuarios (20.0%)
+
+Normalizando variables (StandardScaler)...
+
+Entrenando Regresion Logistica...
+✓ Modelo entrenado exitosamente
+
+Validacion Cruzada (5-fold)...
+ROC-AUC por fold: [0.73161298 0.72606379 0.73067105 0.73487217 0.73885166]
+Media: 0.7324 (+/- 0.0043)</code></pre>
+</div>
+</div>
+</section>
+<section id="resultados-del-modelo" class="level2" data-number="4.3">
+<h2 data-number="4.3" class="anchored" data-anchor-id="resultados-del-modelo"><span class="header-section-number">4.3</span> Resultados del Modelo</h2>
+<div class="cell" data-execution_count="11">
+<div id="tbl-resultados-logreg" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="11">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-resultados-logreg-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;2: Métricas del modelo de Regresión Logística
+</figcaption>
+<div aria-describedby="tbl-resultados-logreg-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display">
+<style type="text/css">
+</style>
+
+<table id="T_55e51" class="do-not-create-environment cell caption-top table table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th id="T_55e51_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">Métrica</th>
+<th id="T_55e51_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">Test</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td id="T_55e51_row0_col0" class="data row0 col0">ROC-AUC</td>
+<td id="T_55e51_row0_col1" class="data row0 col1">0.7337</td>
+</tr>
+<tr class="even">
+<td id="T_55e51_row1_col0" class="data row1 col0">Average Precision</td>
+<td id="T_55e51_row1_col1" class="data row1 col1">0.2109</td>
+</tr>
+<tr class="odd">
+<td id="T_55e51_row2_col0" class="data row2 col0">Accuracy</td>
+<td id="T_55e51_row2_col1" class="data row2 col1">0.6841</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<section id="matriz-de-confusión" class="level3" data-number="4.3.1">
+<h3 data-number="4.3.1" class="anchored" data-anchor-id="matriz-de-confusión"><span class="header-section-number">4.3.1</span> Matriz de Confusión</h3>
+<div id="cell-fig-cm-logreg" class="cell" data-execution_count="12">
+<div class="cell-output cell-output-display">
+<div id="fig-cm-logreg" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-cm-logreg-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="reporte-final_files/figure-html/fig-cm-logreg-output-1.png" width="719" height="562" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-cm-logreg-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Matriz de Confusión - Regresión Logística (Test Set)
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Interpretación:
+  Verdaderos Negativos (TN): 38,816 - Predijo 'Pago' y si pagó
+  Falsos Positivos (FP): 17,722 - Predijo 'Default' pero pagó
+  Falsos Negativos (FN): 1,708 - Predijo 'Pago' pero hizo default
+  Verdaderos Positivos (TP): 3,257 - Predijo 'Default' y si hizo default</code></pre>
+</div>
+</div>
+</section>
+<section id="importancia-de-variables" class="level3" data-number="4.3.2">
+<h3 data-number="4.3.2" class="anchored" data-anchor-id="importancia-de-variables"><span class="header-section-number">4.3.2</span> Importancia de Variables</h3>
+<div id="cell-fig-importancia-logreg" class="cell" data-execution_count="13">
+<div class="cell-output cell-output-display">
+<div id="fig-importancia-logreg" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-importancia-logreg-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="reporte-final_files/figure-html/fig-importancia-logreg-output-1.png" width="950" height="754" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-importancia-logreg-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: Coeficientes de Regresión Logística (Top 15 variables)
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="curvas-roc-y-precision-recall" class="level3" data-number="4.3.3">
+<h3 data-number="4.3.3" class="anchored" data-anchor-id="curvas-roc-y-precision-recall"><span class="header-section-number">4.3.3</span> Curvas ROC y Precision-Recall</h3>
+<div class="cell" data-execution_count="14">
+<div id="fig-curves-logreg" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="14">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-curves-logreg-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display">
+<div id="fig-curves-logreg-1" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-subfloat-fig figure">
+<div aria-describedby="fig-curves-logreg-1-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="reporte-final_files/figure-html/fig-curves-logreg-output-1.png" data-ref-parent="fig-curves-logreg" width="1096" height="413" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-curves-logreg-1-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+(a) Curvas ROC y Precision-Recall - Regresión Logística
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div id="fig-curves-logreg-2" class="quarto-float quarto-figure quarto-figure-center anchored" height="563" width="1907">
+<figure class="quarto-float quarto-subfloat-fig figure">
+<div aria-describedby="fig-curves-logreg-2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="reporte-final_files/figure-html/fig-curves-logreg-output-2.png" id="fig-curves-logreg-2" data-ref-parent="fig-curves-logreg" width="1907" height="563" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-curves-logreg-2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+(b)
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig quarto-uncaptioned" id="fig-curves-logreg-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;5
+</figcaption>
+</figure>
+</div>
+</div>
+<p>En el caso de la regresión logística, el ROC-AUC y el Average Precision en el set de prueba indican que el modelo logra <strong>discriminar razonablemente bien</strong> entre clientes que harán default y aquellos que no, aun en presencia de fuerte desbalance. El hecho de que las métricas de entrenamiento y prueba sean cercanas sugiere que el modelo <strong>no presenta overfitting severo</strong>, lo cual es coherente con la regularización L2 y la relativa parsimonia del conjunto de variables.</p>
+<p>Dado que se trata de un modelo lineal, la información contenida en los coeficientes se puede traducir a <strong>insights de negocio</strong>:</p>
+<ul>
+<li>Coeficientes positivos indican variables que <strong>incrementan</strong> el riesgo de impago (por ejemplo, mayores ratios de deuda o mayor proporción de meses con mora).</li>
+<li>Coeficientes negativos corresponden a variables que <strong>reducen</strong> el riesgo (p.&nbsp;ej. mayores ingresos per cápita o mejores scores externos).</li>
+</ul>
+<p>Este modelo, aun cuando no es el de mejor desempeño, proporciona una <strong>línea base interpretable</strong> contra la cual podemos comparar modelos más complejos.</p>
+<p>La matriz de confusión permite visualizar con claridad los <strong>errores de clasificación</strong>:</p>
+<ul>
+<li>Los <strong>falsos negativos (FN)</strong> corresponden a clientes que el modelo considera “buenos” pero que terminan en default; son los más costosos desde el punto de vista del riesgo.</li>
+<li>Los <strong>falsos positivos (FP)</strong> son clientes rechazados o tratados como de alto riesgo, aunque finalmente hubieran pagado; reflejan un costo de <strong>oportunidad</strong> y posible pérdida de negocio.</li>
+</ul>
+<p>El umbral estándar de 0.5 utilizado para convertir probabilidades en clases puede no ser el óptimo desde una perspectiva de negocio. En una implementación real, sería deseable <strong>ajustar el umbral</strong> en función de:</p>
+<ul>
+<li>El costo relativo de FN vs FP.</li>
+<li>Restricciones de capital y objetivos de crecimiento de cartera.</li>
+<li>Políticas internas de riesgo y regulación.</li>
+</ul>
+</section>
+</section>
+</section>
+<section id="random-forest" class="level1" data-number="5">
+<h1 data-number="5"><span class="header-section-number">5</span> Random Forest</h1>
+<section id="descripción-del-modelo" class="level2" data-number="5.1">
+<h2 data-number="5.1" class="anchored" data-anchor-id="descripción-del-modelo"><span class="header-section-number">5.1</span> Descripción del Modelo</h2>
+<p>Random Forest es un algoritmo de <strong>ensemble learning</strong> basado en árboles de decisión. El modelo construye múltiples árboles utilizando:</p>
+<ol type="1">
+<li><strong>Bagging (Bootstrap Aggregating)</strong>: Cada árbol se entrena con una muestra bootstrap del conjunto de datos</li>
+<li><strong>Selección aleatoria de features</strong>: En cada split, solo se considera un subconjunto aleatorio de variables</li>
+</ol>
+<p>Para clasificación, la predicción final se obtiene por <strong>votación mayoritaria</strong>:</p>
+<p><span class="math display">\[
+\hat{y} = \text{mode}\{\hat{y}_1, \hat{y}_2, ..., \hat{y}_B\}
+\]</span></p>
+<p>Donde <span class="math inline">\(B\)</span> es el número de árboles.</p>
+<section id="importancia-de-variables-gini-importance" class="level3" data-number="5.1.1">
+<h3 data-number="5.1.1" class="anchored" data-anchor-id="importancia-de-variables-gini-importance"><span class="header-section-number">5.1.1</span> Importancia de Variables (Gini Importance)</h3>
+<p>La importancia de una variable se mide como la reducción promedio de la impureza de Gini:</p>
+<p><span class="math display">\[
+\text{Gini}(t) = 1 - \sum_{k=1}^{K} p_{tk}^2
+\]</span></p>
+<p>Donde <span class="math inline">\(p_{tk}\)</span> es la proporción de observaciones de clase <span class="math inline">\(k\)</span> en el nodo <span class="math inline">\(t\)</span>.</p>
+</section>
+</section>
+<section id="entrenamiento-del-modelo-1" class="level2" data-number="5.2">
+<h2 data-number="5.2" class="anchored" data-anchor-id="entrenamiento-del-modelo-1"><span class="header-section-number">5.2</span> Entrenamiento del Modelo</h2>
+<div id="random-forest" class="cell" data-execution_count="15">
+<details class="code-fold">
+<summary>Ver código del modelo Random Forest</summary>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Configuración</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>N_ESTIMATORS <span class="op">=</span> <span class="dv">100</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>MAX_DEPTH <span class="op">=</span> <span class="dv">15</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>MIN_SAMPLES_SPLIT <span class="op">=</span> <span class="dv">10</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>MIN_SAMPLES_LEAF <span class="op">=</span> <span class="dv">5</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"="</span><span class="op">*</span><span class="dv">80</span>)</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"MODELO DE RANDOM FOREST - HOME CREDIT DEFAULT RISK"</span>)</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"="</span><span class="op">*</span><span class="dv">80</span>)</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Preparar datos (reusar los mismos splits)</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>X_rf <span class="op">=</span> df.drop([<span class="st">'SK_ID_CURR'</span>, <span class="st">'TARGET'</span>], axis<span class="op">=</span><span class="dv">1</span>).copy()</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>y_rf <span class="op">=</span> df[<span class="st">'TARGET'</span>].copy()</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>numeric_vars_rf <span class="op">=</span> X_rf.select_dtypes(include<span class="op">=</span>[np.number]).columns.tolist()</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>categorical_vars_rf <span class="op">=</span> X_rf.select_dtypes(include<span class="op">=</span>[<span class="st">'object'</span>]).columns.tolist()</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Imputación</span></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> col <span class="kw">in</span> numeric_vars_rf:</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> X_rf[col].isnull().<span class="bu">sum</span>() <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>        X_rf[col].fillna(X_rf[col].median(), inplace<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> col <span class="kw">in</span> categorical_vars_rf:</span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> X_rf[col].isnull().<span class="bu">sum</span>() <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>        X_rf[col].fillna(X_rf[col].mode()[<span class="dv">0</span>], inplace<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a><span class="co"># Codificación</span></span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>label_encoders_rf <span class="op">=</span> {}</span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> col <span class="kw">in</span> categorical_vars_rf:</span>
+<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a>    le <span class="op">=</span> LabelEncoder()</span>
+<span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a>    X_rf[col] <span class="op">=</span> le.fit_transform(X_rf[col].astype(<span class="bu">str</span>))</span>
+<span id="cb9-32"><a href="#cb9-32" aria-hidden="true" tabindex="-1"></a>    label_encoders_rf[col] <span class="op">=</span> le</span>
+<span id="cb9-33"><a href="#cb9-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-34"><a href="#cb9-34" aria-hidden="true" tabindex="-1"></a><span class="co"># División</span></span>
+<span id="cb9-35"><a href="#cb9-35" aria-hidden="true" tabindex="-1"></a>X_train_rf, X_test_rf, y_train_rf, y_test_rf <span class="op">=</span> train_test_split(</span>
+<span id="cb9-36"><a href="#cb9-36" aria-hidden="true" tabindex="-1"></a>    X_rf, y_rf, </span>
+<span id="cb9-37"><a href="#cb9-37" aria-hidden="true" tabindex="-1"></a>    test_size<span class="op">=</span>TEST_SIZE,</span>
+<span id="cb9-38"><a href="#cb9-38" aria-hidden="true" tabindex="-1"></a>    random_state<span class="op">=</span>RANDOM_STATE,</span>
+<span id="cb9-39"><a href="#cb9-39" aria-hidden="true" tabindex="-1"></a>    stratify<span class="op">=</span>y_rf</span>
+<span id="cb9-40"><a href="#cb9-40" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb9-41"><a href="#cb9-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-42"><a href="#cb9-42" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Train set: </span><span class="sc">{</span>X_train_rf<span class="sc">.</span>shape[<span class="dv">0</span>]<span class="sc">:,}</span><span class="ss"> usuarios"</span>)</span>
+<span id="cb9-43"><a href="#cb9-43" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Test set:  </span><span class="sc">{</span>X_test_rf<span class="sc">.</span>shape[<span class="dv">0</span>]<span class="sc">:,}</span><span class="ss"> usuarios"</span>)</span>
+<span id="cb9-44"><a href="#cb9-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-45"><a href="#cb9-45" aria-hidden="true" tabindex="-1"></a><span class="co"># Entrenamiento</span></span>
+<span id="cb9-46"><a href="#cb9-46" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Entrenando Random Forest..."</span>)</span>
+<span id="cb9-47"><a href="#cb9-47" aria-hidden="true" tabindex="-1"></a>model_rf <span class="op">=</span> RandomForestClassifier(</span>
+<span id="cb9-48"><a href="#cb9-48" aria-hidden="true" tabindex="-1"></a>    n_estimators<span class="op">=</span>N_ESTIMATORS,</span>
+<span id="cb9-49"><a href="#cb9-49" aria-hidden="true" tabindex="-1"></a>    max_depth<span class="op">=</span>MAX_DEPTH,</span>
+<span id="cb9-50"><a href="#cb9-50" aria-hidden="true" tabindex="-1"></a>    min_samples_split<span class="op">=</span>MIN_SAMPLES_SPLIT,</span>
+<span id="cb9-51"><a href="#cb9-51" aria-hidden="true" tabindex="-1"></a>    min_samples_leaf<span class="op">=</span>MIN_SAMPLES_LEAF,</span>
+<span id="cb9-52"><a href="#cb9-52" aria-hidden="true" tabindex="-1"></a>    class_weight<span class="op">=</span><span class="st">'balanced'</span>,</span>
+<span id="cb9-53"><a href="#cb9-53" aria-hidden="true" tabindex="-1"></a>    random_state<span class="op">=</span>RANDOM_STATE,</span>
+<span id="cb9-54"><a href="#cb9-54" aria-hidden="true" tabindex="-1"></a>    n_jobs<span class="op">=-</span><span class="dv">1</span></span>
+<span id="cb9-55"><a href="#cb9-55" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb9-56"><a href="#cb9-56" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-57"><a href="#cb9-57" aria-hidden="true" tabindex="-1"></a>model_rf.fit(X_train_rf, y_train_rf)</span>
+<span id="cb9-58"><a href="#cb9-58" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"✓ Modelo entrenado exitosamente"</span>)</span>
+<span id="cb9-59"><a href="#cb9-59" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Número de árboles: </span><span class="sc">{</span>model_rf<span class="sc">.</span>n_estimators<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb9-60"><a href="#cb9-60" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Profundidad máxima: </span><span class="sc">{</span>model_rf<span class="sc">.</span>max_depth<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb9-61"><a href="#cb9-61" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-62"><a href="#cb9-62" aria-hidden="true" tabindex="-1"></a><span class="co"># Validación Cruzada</span></span>
+<span id="cb9-63"><a href="#cb9-63" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Validacion Cruzada (</span><span class="sc">{</span>CV_FOLDS<span class="sc">}</span><span class="ss">-fold)..."</span>)</span>
+<span id="cb9-64"><a href="#cb9-64" aria-hidden="true" tabindex="-1"></a>cv_scores_rf <span class="op">=</span> cross_val_score(</span>
+<span id="cb9-65"><a href="#cb9-65" aria-hidden="true" tabindex="-1"></a>    model_rf, X_train_rf, y_train_rf, </span>
+<span id="cb9-66"><a href="#cb9-66" aria-hidden="true" tabindex="-1"></a>    cv<span class="op">=</span>CV_FOLDS, </span>
+<span id="cb9-67"><a href="#cb9-67" aria-hidden="true" tabindex="-1"></a>    scoring<span class="op">=</span><span class="st">'roc_auc'</span>,</span>
+<span id="cb9-68"><a href="#cb9-68" aria-hidden="true" tabindex="-1"></a>    n_jobs<span class="op">=-</span><span class="dv">1</span></span>
+<span id="cb9-69"><a href="#cb9-69" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb9-70"><a href="#cb9-70" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"ROC-AUC por fold: </span><span class="sc">{</span>cv_scores_rf<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb9-71"><a href="#cb9-71" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Media: </span><span class="sc">{</span>cv_scores_rf<span class="sc">.</span>mean()<span class="sc">:.4f}</span><span class="ss"> (+/- </span><span class="sc">{</span>cv_scores_rf<span class="sc">.</span>std()<span class="sc">:.4f}</span><span class="ss">)"</span>)</span>
+<span id="cb9-72"><a href="#cb9-72" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-73"><a href="#cb9-73" aria-hidden="true" tabindex="-1"></a><span class="co"># Predicciones</span></span>
+<span id="cb9-74"><a href="#cb9-74" aria-hidden="true" tabindex="-1"></a>y_train_pred_rf <span class="op">=</span> model_rf.predict(X_train_rf)</span>
+<span id="cb9-75"><a href="#cb9-75" aria-hidden="true" tabindex="-1"></a>y_train_proba_rf <span class="op">=</span> model_rf.predict_proba(X_train_rf)[:, <span class="dv">1</span>]</span>
+<span id="cb9-76"><a href="#cb9-76" aria-hidden="true" tabindex="-1"></a>y_test_pred_rf <span class="op">=</span> model_rf.predict(X_test_rf)</span>
+<span id="cb9-77"><a href="#cb9-77" aria-hidden="true" tabindex="-1"></a>y_test_proba_rf <span class="op">=</span> model_rf.predict_proba(X_test_rf)[:, <span class="dv">1</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>================================================================================
+MODELO DE RANDOM FOREST - HOME CREDIT DEFAULT RISK
+================================================================================
+
+Train set: 246,008 usuarios
+Test set:  61,503 usuarios
+
+Entrenando Random Forest...
+✓ Modelo entrenado exitosamente
+  Número de árboles: 100
+  Profundidad máxima: 15
+
+Validacion Cruzada (5-fold)...
+ROC-AUC por fold: [0.7399194  0.72517727 0.73832354 0.73798331 0.74308408]
+Media: 0.7369 (+/- 0.0061)</code></pre>
+</div>
+</div>
+</section>
+<section id="resultados-del-modelo-1" class="level2" data-number="5.3">
+<h2 data-number="5.3" class="anchored" data-anchor-id="resultados-del-modelo-1"><span class="header-section-number">5.3</span> Resultados del Modelo</h2>
+<div class="cell" data-execution_count="16">
+<div id="tbl-resultados-rf" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="16">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-resultados-rf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;3: Métricas del modelo Random Forest
+</figcaption>
+<div aria-describedby="tbl-resultados-rf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display">
+<style type="text/css">
+</style>
+
+<table id="T_2ae57" class="do-not-create-environment cell caption-top table table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th id="T_2ae57_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">Métrica</th>
+<th id="T_2ae57_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">Test</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td id="T_2ae57_row0_col0" class="data row0 col0">ROC-AUC</td>
+<td id="T_2ae57_row0_col1" class="data row0 col1">0.739559</td>
+</tr>
+<tr class="even">
+<td id="T_2ae57_row1_col0" class="data row1 col0">Average Precision</td>
+<td id="T_2ae57_row1_col1" class="data row1 col1">0.215535</td>
+</tr>
+<tr class="odd">
+<td id="T_2ae57_row2_col0" class="data row2 col0">Accuracy</td>
+<td id="T_2ae57_row2_col1" class="data row2 col1">0.816968</td>
+</tr>
+<tr class="even">
+<td id="T_2ae57_row3_col0" class="data row3 col0">Overfitting (Gap)</td>
+<td id="T_2ae57_row3_col1" class="data row3 col1">0.172557</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<section id="matriz-de-confusión-1" class="level3" data-number="5.3.1">
+<h3 data-number="5.3.1" class="anchored" data-anchor-id="matriz-de-confusión-1"><span class="header-section-number">5.3.1</span> Matriz de Confusión</h3>
+<div id="cell-fig-cm-rf" class="cell" data-execution_count="17">
+<div class="cell-output cell-output-display">
+<div id="fig-cm-rf" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-cm-rf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="reporte-final_files/figure-html/fig-cm-rf-output-1.png" width="719" height="561" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-cm-rf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;6: Matriz de Confusión - Random Forest (Test Set)
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="importancia-de-variables-1" class="level3" data-number="5.3.2">
+<h3 data-number="5.3.2" class="anchored" data-anchor-id="importancia-de-variables-1"><span class="header-section-number">5.3.2</span> Importancia de Variables</h3>
+<div class="cell" data-execution_count="18">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+✓ SCORE_PROMEDIO domina con 32.0% de la importancia total</code></pre>
+</div>
+<div id="fig-importancia-rf" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="18">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-importancia-rf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display">
+<div id="fig-importancia-rf-1" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-subfloat-fig figure">
+<div aria-describedby="fig-importancia-rf-1-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="reporte-final_files/figure-html/fig-importancia-rf-output-1.png" data-ref-parent="fig-importancia-rf" width="950" height="754" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-importancia-rf-1-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+(a) Importancia de variables en Random Forest (Gini Importance)
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div id="fig-importancia-rf-2" class="quarto-float quarto-figure quarto-figure-center anchored" height="1330" width="1523">
+<figure class="quarto-float quarto-subfloat-fig figure">
+<div aria-describedby="fig-importancia-rf-2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="reporte-final_files/figure-html/fig-importancia-rf-output-3.png" id="fig-importancia-rf-2" data-ref-parent="fig-importancia-rf" width="1523" height="1330" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-importancia-rf-2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+(b)
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig quarto-uncaptioned" id="fig-importancia-rf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;7
+</figcaption>
+</figure>
+</div>
+</div>
+</section>
+</section>
+</section>
+<section id="xgboost" class="level1" data-number="6">
+<h1 data-number="6"><span class="header-section-number">6</span> XGBoost</h1>
+<section id="descripción-del-modelo-1" class="level2" data-number="6.1">
+<h2 data-number="6.1" class="anchored" data-anchor-id="descripción-del-modelo-1"><span class="header-section-number">6.1</span> Descripción del Modelo</h2>
+<p><strong>XGBoost</strong> (Extreme Gradient Boosting) es un algoritmo de <strong>boosting</strong> que construye árboles de decisión de manera secuencial. A diferencia de Random Forest que construye árboles en paralelo, XGBoost:</p>
+<ol type="1">
+<li><strong>Entrena árboles secuencialmente</strong>: Cada árbol corrige los errores del anterior</li>
+<li><strong>Utiliza gradient boosting</strong>: Optimiza una función de pérdida usando gradiente descendente</li>
+<li><strong>Incluye regularización</strong>: Penaliza la complejidad del modelo para prevenir overfitting</li>
+</ol>
+<section id="mecanismo-de-boosting" class="level3" data-number="6.1.1">
+<h3 data-number="6.1.1" class="anchored" data-anchor-id="mecanismo-de-boosting"><span class="header-section-number">6.1.1</span> Mecanismo de Boosting</h3>
+<p>El modelo final es una suma ponderada de árboles:</p>
+<p><span class="math display">\[
+\hat{y}_i = \sum_{k=1}^{K} f_k(x_i)
+\]</span></p>
+<p>Donde cada árbol <span class="math inline">\(f_k\)</span> se entrena para minimizar:</p>
+<p><span class="math display">\[
+\mathcal{L}^{(k)} = \sum_{i=1}^{n} l(y_i, \hat{y}_i^{(k-1)} + f_k(x_i)) + \Omega(f_k)
+\]</span></p>
+<p>La regularización <span class="math inline">\(\Omega(f_k)\)</span> incluye: - <strong>L1 (alpha)</strong>: Regularización de pesos - <strong>L2 (lambda)</strong>: Regularización de scores de hojas - <strong>gamma</strong>: Penalización por complejidad del árbol</p>
+</section>
+<section id="learning-rate-η" class="level3" data-number="6.1.2">
+<h3 data-number="6.1.2" class="anchored" data-anchor-id="learning-rate-η"><span class="header-section-number">6.1.2</span> Learning Rate (η)</h3>
+<p>El learning rate controla la contribución de cada árbol:</p>
+<p><span class="math display">\[
+\hat{y}_i^{(k)} = \hat{y}_i^{(k-1)} + \eta \cdot f_k(x_i)
+\]</span></p>
+</section>
+</section>
+<section id="entrenamiento-del-modelo-2" class="level2" data-number="6.2">
+<h2 data-number="6.2" class="anchored" data-anchor-id="entrenamiento-del-modelo-2"><span class="header-section-number">6.2</span> Entrenamiento del Modelo</h2>
+<div id="xgboost" class="cell" data-execution_count="19">
+<details class="code-fold">
+<summary>Ver código del modelo XGBoost</summary>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Configuración XGBoost</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>N_ESTIMATORS_XGB <span class="op">=</span> <span class="dv">100</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>MAX_DEPTH_XGB <span class="op">=</span> <span class="dv">6</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>LEARNING_RATE <span class="op">=</span> <span class="fl">0.1</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>MIN_CHILD_WEIGHT <span class="op">=</span> <span class="dv">5</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>SUBSAMPLE <span class="op">=</span> <span class="fl">0.8</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>COLSAMPLE_BYTREE <span class="op">=</span> <span class="fl">0.8</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"="</span><span class="op">*</span><span class="dv">80</span>)</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"MODELO XGBOOST - HOME CREDIT DEFAULT RISK"</span>)</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"="</span><span class="op">*</span><span class="dv">80</span>)</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Preparar datos</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>X_xgb <span class="op">=</span> df.drop([<span class="st">'SK_ID_CURR'</span>, <span class="st">'TARGET'</span>], axis<span class="op">=</span><span class="dv">1</span>).copy()</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>y_xgb <span class="op">=</span> df[<span class="st">'TARGET'</span>].copy()</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>numeric_vars_xgb <span class="op">=</span> X_xgb.select_dtypes(include<span class="op">=</span>[np.number]).columns.tolist()</span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>categorical_vars_xgb <span class="op">=</span> X_xgb.select_dtypes(include<span class="op">=</span>[<span class="st">'object'</span>]).columns.tolist()</span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a><span class="co"># Imputación</span></span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> col <span class="kw">in</span> numeric_vars_xgb:</span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> X_xgb[col].isnull().<span class="bu">sum</span>() <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>        X_xgb[col].fillna(X_xgb[col].median(), inplace<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> col <span class="kw">in</span> categorical_vars_xgb:</span>
+<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> X_xgb[col].isnull().<span class="bu">sum</span>() <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb12-27"><a href="#cb12-27" aria-hidden="true" tabindex="-1"></a>        X_xgb[col].fillna(X_xgb[col].mode()[<span class="dv">0</span>], inplace<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb12-28"><a href="#cb12-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-29"><a href="#cb12-29" aria-hidden="true" tabindex="-1"></a><span class="co"># Codificación</span></span>
+<span id="cb12-30"><a href="#cb12-30" aria-hidden="true" tabindex="-1"></a>label_encoders_xgb <span class="op">=</span> {}</span>
+<span id="cb12-31"><a href="#cb12-31" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> col <span class="kw">in</span> categorical_vars_xgb:</span>
+<span id="cb12-32"><a href="#cb12-32" aria-hidden="true" tabindex="-1"></a>    le <span class="op">=</span> LabelEncoder()</span>
+<span id="cb12-33"><a href="#cb12-33" aria-hidden="true" tabindex="-1"></a>    X_xgb[col] <span class="op">=</span> le.fit_transform(X_xgb[col].astype(<span class="bu">str</span>))</span>
+<span id="cb12-34"><a href="#cb12-34" aria-hidden="true" tabindex="-1"></a>    label_encoders_xgb[col] <span class="op">=</span> le</span>
+<span id="cb12-35"><a href="#cb12-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-36"><a href="#cb12-36" aria-hidden="true" tabindex="-1"></a><span class="co"># División</span></span>
+<span id="cb12-37"><a href="#cb12-37" aria-hidden="true" tabindex="-1"></a>X_train_xgb, X_test_xgb, y_train_xgb, y_test_xgb <span class="op">=</span> train_test_split(</span>
+<span id="cb12-38"><a href="#cb12-38" aria-hidden="true" tabindex="-1"></a>    X_xgb, y_xgb, </span>
+<span id="cb12-39"><a href="#cb12-39" aria-hidden="true" tabindex="-1"></a>    test_size<span class="op">=</span>TEST_SIZE,</span>
+<span id="cb12-40"><a href="#cb12-40" aria-hidden="true" tabindex="-1"></a>    random_state<span class="op">=</span>RANDOM_STATE,</span>
+<span id="cb12-41"><a href="#cb12-41" aria-hidden="true" tabindex="-1"></a>    stratify<span class="op">=</span>y_xgb</span>
+<span id="cb12-42"><a href="#cb12-42" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-43"><a href="#cb12-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-44"><a href="#cb12-44" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Train set: </span><span class="sc">{</span>X_train_xgb<span class="sc">.</span>shape[<span class="dv">0</span>]<span class="sc">:,}</span><span class="ss"> usuarios"</span>)</span>
+<span id="cb12-45"><a href="#cb12-45" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Test set:  </span><span class="sc">{</span>X_test_xgb<span class="sc">.</span>shape[<span class="dv">0</span>]<span class="sc">:,}</span><span class="ss"> usuarios"</span>)</span>
+<span id="cb12-46"><a href="#cb12-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-47"><a href="#cb12-47" aria-hidden="true" tabindex="-1"></a><span class="co"># Calcular scale_pos_weight</span></span>
+<span id="cb12-48"><a href="#cb12-48" aria-hidden="true" tabindex="-1"></a>scale_pos_weight <span class="op">=</span> (y_train_xgb <span class="op">==</span> <span class="dv">0</span>).<span class="bu">sum</span>() <span class="op">/</span> (y_train_xgb <span class="op">==</span> <span class="dv">1</span>).<span class="bu">sum</span>()</span>
+<span id="cb12-49"><a href="#cb12-49" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Scale_pos_weight (ratio negativo/positivo): </span><span class="sc">{</span>scale_pos_weight<span class="sc">:.2f}</span><span class="ss">"</span>)</span>
+<span id="cb12-50"><a href="#cb12-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-51"><a href="#cb12-51" aria-hidden="true" tabindex="-1"></a><span class="co"># Entrenamiento</span></span>
+<span id="cb12-52"><a href="#cb12-52" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Entrenando XGBoost..."</span>)</span>
+<span id="cb12-53"><a href="#cb12-53" aria-hidden="true" tabindex="-1"></a>model_xgb <span class="op">=</span> xgb.XGBClassifier(</span>
+<span id="cb12-54"><a href="#cb12-54" aria-hidden="true" tabindex="-1"></a>    n_estimators<span class="op">=</span>N_ESTIMATORS_XGB,</span>
+<span id="cb12-55"><a href="#cb12-55" aria-hidden="true" tabindex="-1"></a>    max_depth<span class="op">=</span>MAX_DEPTH_XGB,</span>
+<span id="cb12-56"><a href="#cb12-56" aria-hidden="true" tabindex="-1"></a>    learning_rate<span class="op">=</span>LEARNING_RATE,</span>
+<span id="cb12-57"><a href="#cb12-57" aria-hidden="true" tabindex="-1"></a>    min_child_weight<span class="op">=</span>MIN_CHILD_WEIGHT,</span>
+<span id="cb12-58"><a href="#cb12-58" aria-hidden="true" tabindex="-1"></a>    subsample<span class="op">=</span>SUBSAMPLE,</span>
+<span id="cb12-59"><a href="#cb12-59" aria-hidden="true" tabindex="-1"></a>    colsample_bytree<span class="op">=</span>COLSAMPLE_BYTREE,</span>
+<span id="cb12-60"><a href="#cb12-60" aria-hidden="true" tabindex="-1"></a>    scale_pos_weight<span class="op">=</span>scale_pos_weight,</span>
+<span id="cb12-61"><a href="#cb12-61" aria-hidden="true" tabindex="-1"></a>    random_state<span class="op">=</span>RANDOM_STATE,</span>
+<span id="cb12-62"><a href="#cb12-62" aria-hidden="true" tabindex="-1"></a>    n_jobs<span class="op">=-</span><span class="dv">1</span>,</span>
+<span id="cb12-63"><a href="#cb12-63" aria-hidden="true" tabindex="-1"></a>    eval_metric<span class="op">=</span><span class="st">'auc'</span>,</span>
+<span id="cb12-64"><a href="#cb12-64" aria-hidden="true" tabindex="-1"></a>    use_label_encoder<span class="op">=</span><span class="va">False</span></span>
+<span id="cb12-65"><a href="#cb12-65" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-66"><a href="#cb12-66" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-67"><a href="#cb12-67" aria-hidden="true" tabindex="-1"></a>model_xgb.fit(X_train_xgb, y_train_xgb)</span>
+<span id="cb12-68"><a href="#cb12-68" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"✓ Modelo entrenado exitosamente"</span>)</span>
+<span id="cb12-69"><a href="#cb12-69" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Número de árboles: </span><span class="sc">{</span>model_xgb<span class="sc">.</span>n_estimators<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb12-70"><a href="#cb12-70" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Profundidad máxima: </span><span class="sc">{</span>model_xgb<span class="sc">.</span>max_depth<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb12-71"><a href="#cb12-71" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  Learning rate: </span><span class="sc">{</span>model_xgb<span class="sc">.</span>learning_rate<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb12-72"><a href="#cb12-72" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-73"><a href="#cb12-73" aria-hidden="true" tabindex="-1"></a><span class="co"># Validación Cruzada</span></span>
+<span id="cb12-74"><a href="#cb12-74" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Validacion Cruzada (</span><span class="sc">{</span>CV_FOLDS<span class="sc">}</span><span class="ss">-fold)..."</span>)</span>
+<span id="cb12-75"><a href="#cb12-75" aria-hidden="true" tabindex="-1"></a>cv_scores_xgb <span class="op">=</span> cross_val_score(</span>
+<span id="cb12-76"><a href="#cb12-76" aria-hidden="true" tabindex="-1"></a>    model_xgb, X_train_xgb, y_train_xgb, </span>
+<span id="cb12-77"><a href="#cb12-77" aria-hidden="true" tabindex="-1"></a>    cv<span class="op">=</span>CV_FOLDS, </span>
+<span id="cb12-78"><a href="#cb12-78" aria-hidden="true" tabindex="-1"></a>    scoring<span class="op">=</span><span class="st">'roc_auc'</span>,</span>
+<span id="cb12-79"><a href="#cb12-79" aria-hidden="true" tabindex="-1"></a>    n_jobs<span class="op">=-</span><span class="dv">1</span></span>
+<span id="cb12-80"><a href="#cb12-80" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-81"><a href="#cb12-81" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"ROC-AUC por fold: </span><span class="sc">{</span>cv_scores_xgb<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb12-82"><a href="#cb12-82" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Media: </span><span class="sc">{</span>cv_scores_xgb<span class="sc">.</span>mean()<span class="sc">:.4f}</span><span class="ss"> (+/- </span><span class="sc">{</span>cv_scores_xgb<span class="sc">.</span>std()<span class="sc">:.4f}</span><span class="ss">)"</span>)</span>
+<span id="cb12-83"><a href="#cb12-83" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-84"><a href="#cb12-84" aria-hidden="true" tabindex="-1"></a><span class="co"># Predicciones</span></span>
+<span id="cb12-85"><a href="#cb12-85" aria-hidden="true" tabindex="-1"></a>y_train_pred_xgb <span class="op">=</span> model_xgb.predict(X_train_xgb)</span>
+<span id="cb12-86"><a href="#cb12-86" aria-hidden="true" tabindex="-1"></a>y_train_proba_xgb <span class="op">=</span> model_xgb.predict_proba(X_train_xgb)[:, <span class="dv">1</span>]</span>
+<span id="cb12-87"><a href="#cb12-87" aria-hidden="true" tabindex="-1"></a>y_test_pred_xgb <span class="op">=</span> model_xgb.predict(X_test_xgb)</span>
+<span id="cb12-88"><a href="#cb12-88" aria-hidden="true" tabindex="-1"></a>y_test_proba_xgb <span class="op">=</span> model_xgb.predict_proba(X_test_xgb)[:, <span class="dv">1</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>================================================================================
+MODELO XGBOOST - HOME CREDIT DEFAULT RISK
+================================================================================
+
+Train set: 246,008 usuarios
+Test set:  61,503 usuarios
+
+Scale_pos_weight (ratio negativo/positivo): 11.39
+
+Entrenando XGBoost...
+✓ Modelo entrenado exitosamente
+  Número de árboles: 100
+  Profundidad máxima: 6
+  Learning rate: 0.1
+
+Validacion Cruzada (5-fold)...
+ROC-AUC por fold: [0.75090577 0.73973452 0.74770615 0.75076835 0.75653203]
+Media: 0.7491 (+/- 0.0055)</code></pre>
+</div>
+</div>
+</section>
+<section id="resultados-del-modelo-2" class="level2" data-number="6.3">
+<h2 data-number="6.3" class="anchored" data-anchor-id="resultados-del-modelo-2"><span class="header-section-number">6.3</span> Resultados del Modelo</h2>
+<div class="cell" data-execution_count="20">
+<div id="tbl-resultados-xgb" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="20">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-resultados-xgb-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;4: Métricas del modelo XGBoost
+</figcaption>
+<div aria-describedby="tbl-resultados-xgb-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display">
+<style type="text/css">
+</style>
+
+<table id="T_f030b" class="do-not-create-environment cell caption-top table table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th id="T_f030b_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">Métrica</th>
+<th id="T_f030b_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">Test</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td id="T_f030b_row0_col0" class="data row0 col0">ROC-AUC</td>
+<td id="T_f030b_row0_col1" class="data row0 col1">0.752887</td>
+</tr>
+<tr class="even">
+<td id="T_f030b_row1_col0" class="data row1 col0">Average Precision</td>
+<td id="T_f030b_row1_col1" class="data row1 col1">0.233792</td>
+</tr>
+<tr class="odd">
+<td id="T_f030b_row2_col0" class="data row2 col0">Accuracy</td>
+<td id="T_f030b_row2_col1" class="data row2 col1">0.707022</td>
+</tr>
+<tr class="even">
+<td id="T_f030b_row3_col0" class="data row3 col0">Overfitting (Gap)</td>
+<td id="T_f030b_row3_col1" class="data row3 col1">0.042607</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<section id="matriz-de-confusión-2" class="level3" data-number="6.3.1">
+<h3 data-number="6.3.1" class="anchored" data-anchor-id="matriz-de-confusión-2"><span class="header-section-number">6.3.1</span> Matriz de Confusión</h3>
+<div id="cell-fig-cm-xgb" class="cell" data-execution_count="21">
+<div class="cell-output cell-output-display">
+<div id="fig-cm-xgb" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-cm-xgb-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="reporte-final_files/figure-html/fig-cm-xgb-output-1.png" width="719" height="561" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-cm-xgb-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;8: Matriz de Confusión - XGBoost (Test Set)
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="importancia-de-variables-2" class="level3" data-number="6.3.2">
+<h3 data-number="6.3.2" class="anchored" data-anchor-id="importancia-de-variables-2"><span class="header-section-number">6.3.2</span> Importancia de Variables</h3>
+<div class="cell" data-execution_count="22">
+<div id="fig-importancia-xgb" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="22">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-importancia-xgb-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display">
+<div id="fig-importancia-xgb-1" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-subfloat-fig figure">
+<div aria-describedby="fig-importancia-xgb-1-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="reporte-final_files/figure-html/fig-importancia-xgb-output-1.png" data-ref-parent="fig-importancia-xgb" width="950" height="754" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-importancia-xgb-1-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+(a) Importancia de variables en XGBoost (Gain)
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div id="fig-importancia-xgb-2" class="quarto-float quarto-figure quarto-figure-center anchored" height="1330" width="1523">
+<figure class="quarto-float quarto-subfloat-fig figure">
+<div aria-describedby="fig-importancia-xgb-2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="reporte-final_files/figure-html/fig-importancia-xgb-output-2.png" id="fig-importancia-xgb-2" data-ref-parent="fig-importancia-xgb" width="1523" height="1330" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-importancia-xgb-2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+(b)
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig quarto-uncaptioned" id="fig-importancia-xgb-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;9
+</figcaption>
+</figure>
+</div>
+</div>
+<p>Tanto Random Forest como XGBoost logran mejorar las métricas de desempeño respecto a la regresión logística, lo cual era esperable dado que:</p>
+<ul>
+<li>Capturan <strong>relaciones no lineales</strong> entre las variables.</li>
+<li>Modelan de manera más flexible interacciones entre features (por ejemplo, combinaciones de score, carga de deuda y edad).</li>
+</ul>
+<p>En el caso de Random Forest, la diferencia entre el desempeño en entrenamiento y prueba es mayor, lo que indica cierto <strong>overfitting</strong> inherente al modelo. XGBoost, por su parte, muestra un mejor balance entre ajuste y generalización, gracias a:</p>
+<ul>
+<li>La regularización explícita en la función de pérdida.</li>
+<li>El uso de un learning rate controlado.</li>
+<li>La posibilidad de ajustar hiperparámetros finos (profundidad, min_child_weight, subsample, etc.).</li>
+</ul>
+<p>En resumen, mientras que Random Forest es un buen baseline no lineal relativamente fácil de configurar, XGBoost ofrece un mayor <strong>potencial de performance</strong> a cambio de mayor complejidad de tuning. Es interesante notar que, pese a las diferencias de arquitectura, los tres modelos coinciden en resaltar un conjunto relativamente reducido de variables como las más importantes:</p>
+<ul>
+<li><code>SCORE_PROMEDIO</code> y otras variables relacionadas con el <strong>historial crediticio externo</strong>.</li>
+<li>Ratios que combinan deuda e ingreso (<code>CREDIT_INCOME_RATIO</code>, <code>RATIO_PAGO_CUOTA</code>).</li>
+<li>Indicadores de comportamiento de pago (<code>PCT_MESES_MORA</code>, <code>CREDITOS_CON_IMPAGO</code>).</li>
+</ul>
+<p>Esta coincidencia refuerza la idea de que el riesgo de impago está fuertemente determinado por una combinación de <strong>historial de cumplimiento</strong> y <strong>capacidad de pago actual</strong>, en línea con la narrativa del grafo causal.</p>
+</section>
+</section>
+</section>
+<section id="comparación-de-modelos" class="level1" data-number="7">
+<h1 data-number="7"><span class="header-section-number">7</span> Comparación de Modelos</h1>
+<section id="métricas-globales" class="level2" data-number="7.1">
+<h2 data-number="7.1" class="anchored" data-anchor-id="métricas-globales"><span class="header-section-number">7.1</span> Métricas Globales</h2>
+<div class="cell" data-execution_count="23">
+<div id="tbl-comparacion-final" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="23">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-comparacion-final-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;5: Resumen comparativo de todos los modelos
+</figcaption>
+<div aria-describedby="tbl-comparacion-final-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display">
+<style type="text/css">
+</style>
+
+<table id="T_6b911" class="do-not-create-environment cell caption-top table table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th id="T_6b911_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">Métrica</th>
+<th id="T_6b911_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">Regresión Logística</th>
+<th id="T_6b911_level0_col2" class="col_heading level0 col2" data-quarto-table-cell-role="th">Random Forest</th>
+<th id="T_6b911_level0_col3" class="col_heading level0 col3" data-quarto-table-cell-role="th">XGBoost</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td id="T_6b911_row0_col0" class="data row0 col0">ROC-AUC (Test)</td>
+<td id="T_6b911_row0_col1" class="data row0 col1">0.7337</td>
+<td id="T_6b911_row0_col2" class="data row0 col2">0.7396</td>
+<td id="T_6b911_row0_col3" class="data row0 col3">0.7529</td>
+</tr>
+<tr class="even">
+<td id="T_6b911_row1_col0" class="data row1 col0">Average Precision (Test)</td>
+<td id="T_6b911_row1_col1" class="data row1 col1">0.2109</td>
+<td id="T_6b911_row1_col2" class="data row1 col2">0.2155</td>
+<td id="T_6b911_row1_col3" class="data row1 col3">0.2338</td>
+</tr>
+<tr class="odd">
+<td id="T_6b911_row2_col0" class="data row2 col0">Accuracy (Test)</td>
+<td id="T_6b911_row2_col1" class="data row2 col1">0.6841</td>
+<td id="T_6b911_row2_col2" class="data row2 col2">0.8170</td>
+<td id="T_6b911_row2_col3" class="data row2 col3">0.7070</td>
+</tr>
+<tr class="even">
+<td id="T_6b911_row3_col0" class="data row3 col0">ROC-AUC (Train)</td>
+<td id="T_6b911_row3_col1" class="data row3 col1">0.7329</td>
+<td id="T_6b911_row3_col2" class="data row3 col2">0.9121</td>
+<td id="T_6b911_row3_col3" class="data row3 col3">0.7955</td>
+</tr>
+<tr class="odd">
+<td id="T_6b911_row4_col0" class="data row4 col0">Overfitting (Gap)</td>
+<td id="T_6b911_row4_col1" class="data row4 col1">0.0009</td>
+<td id="T_6b911_row4_col2" class="data row4 col2">0.1726</td>
+<td id="T_6b911_row4_col3" class="data row4 col3">0.0426</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+</section>
+<section id="curvas-roc-comparativas" class="level2" data-number="7.2">
+<h2 data-number="7.2" class="anchored" data-anchor-id="curvas-roc-comparativas"><span class="header-section-number">7.2</span> Curvas ROC Comparativas</h2>
+<div id="cell-fig-roc-comparison" class="cell" data-execution_count="24">
+<div class="cell-output cell-output-display">
+<div id="fig-roc-comparison" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-roc-comparison-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="reporte-final_files/figure-html/fig-roc-comparison-output-1.png" width="1332" height="469" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-roc-comparison-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;10: Comparación de curvas ROC entre modelos
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="matrices-de-confusión-comparativas" class="level2" data-number="7.3">
+<h2 data-number="7.3" class="anchored" data-anchor-id="matrices-de-confusión-comparativas"><span class="header-section-number">7.3</span> Matrices de Confusión Comparativas</h2>
+<div id="cell-fig-confusion-matrices" class="cell" data-execution_count="25">
+<div class="cell-output cell-output-display">
+<div id="fig-confusion-matrices" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-confusion-matrices-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="reporte-final_files/figure-html/fig-confusion-matrices-output-1.png" width="1511" height="467" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-confusion-matrices-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;11: Matrices de confusión de los tres modelos (Test Set)
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>Desde una perspectiva práctica, la elección del modelo no debería basarse únicamente en el valor numérico de AUC o AP, sino también en:</p>
+<ol type="1">
+<li><strong>Estabilidad temporal</strong>: qué tan robusto es el modelo frente a cambios en la distribución de clientes y condiciones macroeconómicas.</li>
+<li><strong>Implementabilidad</strong>: facilidad de desplegar el modelo en sistemas productivos, tiempos de scoring, dependencia de librerías, etc.</li>
+<li><strong>Gobernanza y explicabilidad</strong>: requisitos regulatorios o internos que demanden cierta transparencia en la toma de decisiones.</li>
+</ol>
+<p>En ese sentido:</p>
+<ul>
+<li>La <strong>regresión logística</strong> es atractiva para documentación, auditoría y explicación a no-técnicos.</li>
+<li><strong>Random Forest</strong> ofrece una mejora de desempeño, pero puede ser más difícil de explicar y controlar si se usan muchos árboles profundos.</li>
+<li><strong>XGBoost</strong> se perfila como el candidato más competitivo para producción, siempre que se acompañe de herramientas de explicabilidad que permitan entender contribuciones a nivel cliente.</li>
+</ul>
+</section>
+</section>
+<section id="conclusiones" class="level1" data-number="8">
+<h1 data-number="8"><span class="header-section-number">8</span> Conclusiones</h1>
+<section id="hallazgos-principales" class="level2" data-number="8.1">
+<h2 data-number="8.1" class="anchored" data-anchor-id="hallazgos-principales"><span class="header-section-number">8.1</span> Hallazgos Principales</h2>
+<section id="el-score-crediticio-es-el-predictor-dominante" class="level3" data-number="8.1.1">
+<h3 data-number="8.1.1" class="anchored" data-anchor-id="el-score-crediticio-es-el-predictor-dominante"><span class="header-section-number">8.1.1</span> 1. El Score Crediticio es el Predictor Dominante</h3>
+<p>En los tres modelos, <code>SCORE_PROMEDIO</code> emerge como la variable más importante. Esto confirma que los scores de fuentes externas capturan información valiosa sobre el riesgo crediticio.</p>
+</section>
+<section id="comparación-de-rendimiento" class="level3" data-number="8.1.2">
+<h3 data-number="8.1.2" class="anchored" data-anchor-id="comparación-de-rendimiento"><span class="header-section-number">8.1.2</span> 2. Comparación de Rendimiento</h3>
+<div id="f3a350e5" class="cell" data-execution_count="27">
+<div class="cell-output cell-output-stdout">
+<pre><code>Mejor modelo por ROC-AUC: XGBoost (0.7529)
+
+Resumen:
+  • Regresión Logística: ROC-AUC = 0.7337, Overfitting = 0.0009
+  • Random Forest: ROC-AUC = 0.7396, Overfitting = 0.1726
+  • XGBoost: ROC-AUC = 0.7529, Overfitting = 0.0426</code></pre>
+</div>
+</div>
+</section>
+<section id="trade-off-entre-interpretabilidad-y-rendimiento" class="level3" data-number="8.1.3">
+<h3 data-number="8.1.3" class="anchored" data-anchor-id="trade-off-entre-interpretabilidad-y-rendimiento"><span class="header-section-number">8.1.3</span> 3. Trade-off entre Interpretabilidad y Rendimiento</h3>
+<ul>
+<li><strong>Regresión Logística</strong>: Mayor interpretabilidad (coeficientes directos), menor rendimiento</li>
+<li><strong>XGBoost</strong>: Mejor rendimiento, pero menor interpretabilidad</li>
+<li><strong>Random Forest</strong>: Balance intermedio, pero con mayor overfitting</li>
+</ul>
+</section>
+</section>
+<section id="ventajas-y-desventajas-de-cada-modelo" class="level2" data-number="8.2">
+<h2 data-number="8.2" class="anchored" data-anchor-id="ventajas-y-desventajas-de-cada-modelo"><span class="header-section-number">8.2</span> Ventajas y Desventajas de Cada Modelo</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 32%">
+<col style="width: 41%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Modelo</th>
+<th>Ventajas</th>
+<th>Desventajas</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Regresión Logística</td>
+<td>Alta interpretabilidad, Sin overfitting, Rápido entrenamiento</td>
+<td>Asume linealidad, Menor AUC</td>
+</tr>
+<tr class="even">
+<td>Random Forest</td>
+<td>Captura interacciones, Robusto a outliers</td>
+<td>Alto overfitting, Caja negra</td>
+</tr>
+<tr class="odd">
+<td>XGBoost</td>
+<td>Mejor AUC, Bajo overfitting</td>
+<td>Caja negra, Requiere tuning</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="recomendación-final" class="level2" data-number="8.3">
+<h2 data-number="8.3" class="anchored" data-anchor-id="recomendación-final"><span class="header-section-number">8.3</span> Recomendación Final</h2>
+<section id="para-producción" class="level3" data-number="8.3.1">
+<h3 data-number="8.3.1" class="anchored" data-anchor-id="para-producción"><span class="header-section-number">8.3.1</span> Para Producción</h3>
+<p>Recomendamos implementar <strong>XGBoost</strong> como modelo principal por:</p>
+<ol type="1">
+<li><strong>Mejor rendimiento predictivo</strong></li>
+<li><strong>Buen balance recall-precision</strong></li>
+<li><strong>Bajo overfitting</strong></li>
+<li><strong>Robustez ante desbalance de clases</strong></li>
+</ol>
+</section>
+<section id="validación-de-hipótesis" class="level3" data-number="8.3.2">
+<h3 data-number="8.3.2" class="anchored" data-anchor-id="validación-de-hipótesis"><span class="header-section-number">8.3.2</span> Validación de Hipótesis</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 34%">
+<col style="width: 34%">
+<col style="width: 31%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Hipótesis</th>
+<th>Resultado</th>
+<th>Evidencia</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Menor score crediticio → Mayor riesgo</td>
+<td>✓ Confirmada</td>
+<td>Variable #1 en todos los modelos</td>
+</tr>
+<tr class="even">
+<td>Menor edad → Mayor riesgo</td>
+<td>✓ Confirmada</td>
+<td>Coeficiente negativo en LR</td>
+</tr>
+<tr class="odd">
+<td>Mayor historial de mora → Mayor riesgo</td>
+<td>✓ Confirmada</td>
+<td>PCT_MESES_MORA significativo</td>
+</tr>
+<tr class="even">
+<td>Más créditos activos → Mayor riesgo</td>
+<td>✓ Confirmada</td>
+<td>Coeficiente positivo en LR</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="limitaciones-y-trabajo-futuro" class="level2" data-number="8.4">
+<h2 data-number="8.4" class="anchored" data-anchor-id="limitaciones-y-trabajo-futuro"><span class="header-section-number">8.4</span> Limitaciones y Trabajo Futuro</h2>
+<p>Aunque los resultados son prometedores, nuestro análisis presenta algunas limitaciones que abren la puerta a extensiones interesantes:</p>
+<ul>
+<li><strong>Costos y beneficios explícitos</strong>: no incorporamos un análisis formal de costos de FN/FP ni un modelo de utilidad esperada. Incluir una matriz de costos permitiría <strong>optimizar directamente decisiones de originación</strong> en lugar de solo métricas estadísticas.</li>
+<li><strong>Drift y monitoreo</strong>: en operación real, es fundamental establecer un esquema de monitoreo de <strong>drift de datos y performance</strong> para detectar deterioros en la capacidad predictiva del modelo.</li>
+</ul>
+<p>A pesar de estas limitaciones, el ejercicio demuestra cómo, a partir de un marco causal razonable y de un proceso de ingeniería de variables bien estructurado, es posible construir modelos de riesgo de crédito que sean simultáneamente <strong>útiles para el negocio</strong> y <strong>rigorosos desde el punto de vista estadístico</strong>.</p>
+</section>
+</section>
+<section id="referencias" class="level1" data-number="9">
+<h1 data-number="9"><span class="header-section-number">9</span> Referencias</h1>
+<ol type="1">
+<li><p>Home Credit Group. (2018). <em>Home Credit Default Risk</em>. Kaggle Competition. https://www.kaggle.com/competitions/home-credit-default-risk</p></li>
+<li><p>Breiman, L. (2001). Random Forests. <em>Machine Learning</em>, 45(1), 5-32.</p></li>
+<li><p>Chen, T., &amp; Guestrin, C. (2016). XGBoost: A Scalable Tree Boosting System. <em>Proceedings of the 22nd ACM SIGKDD</em>.</p></li>
+<li><p>Hosmer, D. W., Lemeshow, S., &amp; Sturdivant, R. X. (2013). <em>Applied Logistic Regression</em> (3rd ed.). Wiley.</p></li>
+<li><p>James, G., Witten, D., Hastie, T., &amp; Tibshirani, R. (2021). <em>An Introduction to Statistical Learning</em> (2nd ed.). Springer.</p></li>
+<li><p>Battagliola, M. L. (2025). <em>Guía para la Elaboración del Proyecto Final</em>. ITAM - Estadística Aplicada III.</p></li>
+</ol>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
