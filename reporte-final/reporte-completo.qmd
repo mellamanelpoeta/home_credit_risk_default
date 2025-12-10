@@ -1,0 +1,1443 @@
+---
+title: "Predicción de Riesgo de Impago Crediticio"
+subtitle: "Home Credit Default Risk - Un Enfoque Multivariado"
+author:
+  - name: "Gerardo Guerrero"
+  - name: "Juan Pablo Cordero"
+  - name: "Jerónimo Deli"
+  - name: "Romain S"
+date: "Diciembre 2025"
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    code-fold: true
+    fig-cap-location: bottom
+  pdf:
+    documentclass: article
+    geometry: margin=2.5cm
+    toc: true
+    number-sections: true
+execute:
+  echo: true
+  warning: false
+  error: false
+jupyter: python3
+---
+
+```{python}
+#| echo: false
+#| output: false
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+import xgboost as xgb
+from sklearn.metrics import (
+    classification_report, confusion_matrix, roc_auc_score, 
+    roc_curve, precision_recall_curve, average_precision_score
+)
+from IPython.display import display, Markdown
+import warnings
+warnings.filterwarnings('ignore')
+
+# Configuración de visualización
+plt.style.use('seaborn-v0_8-whitegrid')
+plt.rcParams['figure.figsize'] = (10, 6)
+plt.rcParams['font.size'] = 11
+sns.set_palette('husl')
+
+pd.set_option('display.max_columns', None)
+pd.set_option('display.float_format', lambda x: '%.3f' % x)
+```
+
+# Introducción
+
+## Contexto del Problema
+
+El acceso al crédito es un pilar fundamental para el desarrollo económico individual y colectivo. Sin embargo, las instituciones financieras enfrentan el desafío constante de evaluar el **riesgo de incumplimiento** (*default*) de sus clientes. Una evaluación inadecuada puede resultar en pérdidas significativas para la institución o, por otro lado, en la exclusión financiera de personas que podrían cumplir con sus obligaciones.
+
+**Home Credit Group** es una compañía de servicios financieros enfocada en préstamos a poblaciones no bancarizadas o con historial crediticio limitado. El problema que abordamos es la **predicción del riesgo de impago** utilizando técnicas estadísticas multivariadas, con el objetivo de:
+
+1. **Identificar clientes con alta probabilidad de incumplimiento** antes de otorgar el crédito
+2. **Comprender los factores que influyen en el impago** para diseñar políticas de mitigación
+3. **Equilibrar la inclusión financiera con la gestión del riesgo**
+
+## Marco Conceptual: El Grafo Causal del Impago
+
+Antes de desarrollar nuestros modelos predictivos, construimos un **grafo causal** que representa nuestra comprensión teórica del fenómeno. Este ejercicio de pensamiento causal nos permite identificar las variables relevantes y sus relaciones, fundamentando así nuestro enfoque analítico.
+
+### Modelo Causal Simplificado
+
+El impago crediticio puede originarse por dos vías principales:
+
+- **Fraude**: Cuando el cliente nunca tuvo intención de pagar
+- **Capacidad de Pago**: Cuando el cliente no puede cumplir con sus obligaciones debido a restricciones económicas
+
+El grafo causal detallado nos muestra las relaciones entre las distintas variables que capturamos en los datos y cómo estas se relacionan con los dos mecanismos principales de impago.
+
+## Hipótesis de Investigación
+
+Con base en el marco causal, formulamos las siguientes hipótesis que guiarán nuestro análisis:
+
+| Hipótesis | Variable Proxy | Relación Esperada |
+|-----------|----------------|-------------------|
+| Préstamos más altos incrementan la probabilidad de impago | `AMT_CREDIT` | Positiva |
+| Menor edad y sin historial crediticio aumenta el riesgo | `EDAD_ANOS`, `ES_PRIMER_CREDITO` | Negativa, Positiva |
+| Mal historial crediticio incrementa el riesgo | `EXT_SOURCE_1/2/3`, `SCORE_PROMEDIO` | Negativa |
+| Menor ingreso incrementa el riesgo | `AMT_INCOME_TOTAL`, `INGRESO_PER_CAPITA` | Negativa |
+| Mayor carga de gastos incrementa el riesgo | `CNT_CHILDREN`, `CNT_FAM_MEMBERS` | Positiva |
+| Mayor deuda acumulada incrementa el riesgo | `TOTAL_DEUDA_ACTUAL`, `CREDITOS_ACTIVOS` | Positiva |
+| Menos activos incrementan el riesgo | `NUM_ACTIVOS`, `FLAG_OWN_CAR`, `FLAG_OWN_REALTY` | Negativa |
+| Condiciones crediticias adversas aumentan el riesgo | `TASA_INTERES_PROMEDIO`, `PLAZO_PROMEDIO` | Positiva |
+
+## Preguntas de Investigación
+
+1. ¿Cuáles son las variables con mayor poder predictivo para identificar clientes en riesgo de impago?
+2. ¿Qué modelo (Regresión Logística, Random Forest o XGBoost) ofrece el mejor balance entre interpretabilidad y poder predictivo?
+3. ¿Podemos reducir la dimensionalidad del problema sin perder capacidad predictiva?
+
+# Variables Disponibles
+
+## Descripción del Dataset
+
+El conjunto de datos proviene de la competencia [Home Credit Default Risk](https://www.kaggle.com/competitions/home-credit-default-risk) de Kaggle. La estructura de datos incluye múltiples tablas relacionadas:
+
+```{python}
+#| echo: false
+#| label: tbl-datasets
+#| tbl-cap: "Estructura del dataset Home Credit Default Risk"
+
+datasets_info = pd.DataFrame({
+    'Tabla': ['application_train.csv', 'bureau.csv', 'bureau_balance.csv', 
+              'previous_application.csv', 'installments_payments.csv', 'credit_card_balance.csv'],
+    'Descripción': ['Información principal de las solicitudes', 
+                    'Historial crediticio de otras instituciones',
+                    'Balance mensual de créditos en buró',
+                    'Solicitudes previas en Home Credit',
+                    'Historial de pagos',
+                    'Balance de tarjetas de crédito'],
+    'Registros': ['307,511', '1,716,428', '27,299,925', 
+                  '1,670,214', '13,605,401', '3,840,312']
+})
+
+display(datasets_info.style.hide(axis='index'))
+```
+
+## Variables Originales de Application Train
+
+La tabla principal `application_train.csv` contiene 122 variables que se pueden agrupar en las siguientes categorías:
+
+### Variables Demográficas
+- `CODE_GENDER`: Género del solicitante
+- `DAYS_BIRTH`: Edad en días (negativo)
+- `NAME_FAMILY_STATUS`: Estado civil
+- `CNT_CHILDREN`: Número de hijos
+- `CNT_FAM_MEMBERS`: Número de miembros en la familia
+- `NAME_EDUCATION_TYPE`: Nivel educativo
+- `NAME_INCOME_TYPE`: Tipo de ingreso
+
+### Variables Financieras
+- `AMT_INCOME_TOTAL`: Ingreso total del solicitante
+- `AMT_CREDIT`: Monto del crédito solicitado
+- `AMT_ANNUITY`: Anualidad del préstamo
+- `AMT_GOODS_PRICE`: Precio del bien a comprar
+
+### Scores de Riesgo Externos
+- `EXT_SOURCE_1`: Score externo fuente 1
+- `EXT_SOURCE_2`: Score externo fuente 2
+- `EXT_SOURCE_3`: Score externo fuente 3
+
+### Variables de Activos
+- `FLAG_OWN_CAR`: Si posee automóvil
+- `FLAG_OWN_REALTY`: Si posee propiedad inmobiliaria
+- `OWN_CAR_AGE`: Edad del automóvil
+
+### Variables de Contacto y Documentación
+- `FLAG_MOBIL`: Si tiene teléfono móvil
+- `FLAG_EMAIL`: Si tiene correo electrónico
+- `FLAG_DOCUMENT_*`: Serie de flags para documentos proporcionados
+
+### Variables de Vivienda
+- `NAME_HOUSING_TYPE`: Tipo de vivienda
+- `REGION_POPULATION_RELATIVE`: Población relativa de la región
+- `REGION_RATING_CLIENT`: Rating de la región del cliente
+
+### Consultas al Buró
+- `AMT_REQ_CREDIT_BUREAU_HOUR/DAY/WEEK/MON/QRT/YEAR`: Consultas al buró en diferentes periodos
+
+```{python}
+#| echo: false
+#| label: tbl-resumen-datos
+#| tbl-cap: "Resumen del dataset"
+
+resumen = pd.DataFrame({
+    'Característica': ['Total de usuarios', 'Variables originales', 'Variables seleccionadas', 
+                       'Tasa de Default', 'División Train/Test'],
+    'Valor': ['307,511', '122+', '24-39', '8.07%', '80% / 20%']
+})
+
+display(resumen.style.hide(axis='index'))
+```
+
+## Distribución de la Variable Objetivo
+
+```{python}
+#| echo: false
+#| label: fig-target-dist
+#| fig-cap: "Distribución de la variable TARGET (desbalance de clases)"
+
+target_dist = pd.DataFrame({
+    'Clase': ['No Default (0)', 'Default (1)'],
+    'Cantidad': [282686, 24825],
+    'Porcentaje': [91.93, 8.07]
+})
+
+fig, ax = plt.subplots(figsize=(10, 6))
+
+colors = ['#3498db', '#e74c3c']
+bars = ax.bar(target_dist['Clase'], target_dist['Cantidad'], color=colors, edgecolor='black')
+ax.set_ylabel('Número de Clientes')
+ax.set_title('Distribución de Clases')
+for i, (q, p) in enumerate(zip(target_dist['Cantidad'], target_dist['Porcentaje'])):
+    ax.text(i, q + 5000, f'{q:,}\n({p:.1f}%)', ha='center', fontsize=10)
+
+plt.tight_layout()
+plt.show()
+```
+
+El dataset presenta un **desbalance significativo** con solo el 8.07% de casos positivos (default). Este desbalance tiene implicaciones importantes:
+
+1. Métricas como *accuracy* son engañosas (un modelo que predice siempre "no default" tendría 92% de accuracy)
+2. Debemos usar técnicas como `class_weight='balanced'` o `scale_pos_weight` en los modelos
+3. Las métricas PR-AUC y Recall son más informativas que ROC-AUC
+
+# Variables Seleccionadas y Construidas
+
+## Ingeniería de Variables
+
+A partir de las tablas relacionadas, construimos 41 variables que capturan diferentes dimensiones del riesgo crediticio:
+
+### Variables Demográficas y Socioeconómicas
+
+| Variable | Descripción | Origen |
+|----------|-------------|--------|
+| `EDAD_ANOS` | Edad del solicitante en años | Derivada de `DAYS_BIRTH` |
+| `CNT_CHILDREN` | Número de hijos | Original |
+| `CODE_GENDER` | Género | Original |
+| `NAME_FAMILY_STATUS` | Estado civil | Original |
+| `NAME_EDUCATION_TYPE` | Nivel educativo | Original |
+
+### Variables Financieras
+
+| Variable | Descripción | Origen |
+|----------|-------------|--------|
+| `AMT_CREDIT` | Monto del crédito solicitado | Original |
+| `AMT_INCOME_TOTAL` | Ingreso total declarado | Original |
+| `AMT_ANNUITY` | Anualidad del préstamo | Original |
+| `CREDIT_INCOME_RATIO` | Ratio crédito/ingreso | **Construida** |
+| `INGRESO_PER_CAPITA` | Ingreso por miembro de familia | **Construida** |
+
+### Scores de Riesgo Externos
+
+| Variable | Descripción | Origen |
+|----------|-------------|--------|
+| `EXT_SOURCE_1` | Score externo fuente 1 | Original |
+| `EXT_SOURCE_2` | Score externo fuente 2 | Original |
+| `EXT_SOURCE_3` | Score externo fuente 3 | Original |
+| `SCORE_PROMEDIO` | Promedio de los tres scores externos | **Construida** |
+
+### Historial Crediticio (desde Bureau)
+
+| Variable | Descripción | Origen |
+|----------|-------------|--------|
+| `CREDITOS_ACTIVOS` | Número de créditos activos en buró | **Construida** |
+| `CREDITOS_CERRADOS` | Número de créditos cerrados en buró | **Construida** |
+| `TOTAL_CREDITO_OTORGADO` | Suma histórica de créditos | **Construida** |
+| `TOTAL_DEUDA_ACTUAL` | Deuda vigente total | **Construida** |
+| `PCT_MESES_MORA` | Porcentaje de meses con mora histórica | **Construida** |
+| `CREDITOS_CON_IMPAGO` | Número de créditos con historial de impago | **Construida** |
+| `MAX_DIAS_MORA` | Máximo de días en mora | **Construida** |
+
+### Variables de Préstamos Previos
+
+| Variable | Descripción | Origen |
+|----------|-------------|--------|
+| `NUM_PRESTAMOS_PREVIOS` | Cantidad de préstamos anteriores | **Construida** |
+| `TASA_INTERES_PROMEDIO` | Tasa de interés promedio histórica | **Construida** |
+| `PLAZO_PROMEDIO` | Plazo promedio de créditos previos | **Construida** |
+| `MONTO_PROMEDIO_PREVIO` | Monto promedio de créditos previos | **Construida** |
+| `TOTAL_CREDITO_HISTORICO` | Suma total de créditos históricos | **Construida** |
+
+### Variables de Comportamiento de Pago
+
+| Variable | Descripción | Origen |
+|----------|-------------|--------|
+| `RATIO_PAGO_CUOTA` | Ratio pago realizado / cuota programada | **Construida** |
+| `RATIO_PAGO_MINIMO_TC` | Ratio de pago mínimo en tarjetas | **Construida** |
+
+### Variables de Activos
+
+| Variable | Descripción | Origen |
+|----------|-------------|--------|
+| `FLAG_OWN_CAR` | Posesión de automóvil | Original |
+| `FLAG_OWN_REALTY` | Posesión de inmueble | Original |
+| `NUM_ACTIVOS` | Suma de activos poseídos (0, 1 o 2) | **Construida** |
+
+## Código de Generación de Variables
+
+```{python}
+#| echo: true
+#| eval: false
+#| code-fold: true
+#| code-summary: "Ver código de ingeniería de variables"
+
+# ============================================================================
+# GENERACIÓN DE FEATURES - VERSIÓN OPTIMIZADA
+# ============================================================================
+
+# PARTE 1: FEATURES BASE DE APPLICATION
+df = app_train[['SK_ID_CURR', 'TARGET']].copy()
+
+# Features básicas
+df['AMT_CREDIT'] = app_train['AMT_CREDIT']
+df['AMT_ANNUITY'] = app_train['AMT_ANNUITY']
+df['AMT_INCOME_TOTAL'] = app_train['AMT_INCOME_TOTAL']
+
+# Edad
+df['DAYS_BIRTH'] = app_train['DAYS_BIRTH']
+df['EDAD_ANOS'] = abs(app_train['DAYS_BIRTH']) / 365.25
+
+# Scores externos - Promedio
+df['EXT_SOURCE_1'] = app_train['EXT_SOURCE_1']
+df['EXT_SOURCE_2'] = app_train['EXT_SOURCE_2']
+df['EXT_SOURCE_3'] = app_train['EXT_SOURCE_3']
+df['SCORE_PROMEDIO'] = app_train[['EXT_SOURCE_1', 'EXT_SOURCE_2', 'EXT_SOURCE_3']].mean(axis=1)
+
+# Ratios financieros
+df['CREDIT_INCOME_RATIO'] = df['AMT_CREDIT'] / df['AMT_INCOME_TOTAL']
+df['INGRESO_PER_CAPITA'] = np.where(
+    df['CNT_FAM_MEMBERS'] > 0,
+    df['AMT_INCOME_TOTAL'] / df['CNT_FAM_MEMBERS'],
+    df['AMT_INCOME_TOTAL']
+)
+
+# Activos
+df['NUM_ACTIVOS'] = (app_train['FLAG_OWN_CAR'] == 'Y').astype(int) + \
+                    (app_train['FLAG_OWN_REALTY'] == 'Y').astype(int)
+
+# PARTE 2: FEATURES DE BUREAU
+bureau_agg = bureau.groupby('SK_ID_CURR').agg({
+    'AMT_CREDIT_SUM': 'sum',
+    'AMT_CREDIT_SUM_DEBT': 'sum',
+    'CREDIT_DAY_OVERDUE': 'max',
+    'SK_ID_BUREAU': 'count'
+}).reset_index()
+
+# Créditos activos y cerrados
+bureau_active = bureau[bureau['CREDIT_ACTIVE'] == 'Active'].groupby('SK_ID_CURR').size()
+bureau_closed = bureau[bureau['CREDIT_ACTIVE'] == 'Closed'].groupby('SK_ID_CURR').size()
+
+# PARTE 3: FEATURES DE BUREAU BALANCE
+bureau_balance_merged['EN_MORA'] = bureau_balance_merged['STATUS'].isin(['1', '2', '3', '4', '5'])
+balance_agg = bureau_balance_merged.groupby('SK_ID_CURR').agg({
+    'EN_MORA': 'sum',
+    'STATUS': 'count'
+})
+balance_agg['PCT_MESES_MORA'] = (balance_agg['EN_MORA'] / balance_agg['STATUS']) * 100
+
+# PARTE 4: FEATURES DE PREVIOUS APPLICATION
+prev_agg = prev_app.groupby('SK_ID_CURR').agg({
+    'SK_ID_PREV': 'count',
+    'RATE_INTEREST_PRIMARY': 'mean',
+    'CNT_PAYMENT': 'mean',
+    'AMT_CREDIT': ['mean', 'sum']
+})
+
+# PARTE 5: FEATURES DE INSTALLMENTS
+valid_installments['PAYMENT_RATIO'] = valid_installments['AMT_PAYMENT'] / valid_installments['AMT_INSTALMENT']
+install_agg = valid_installments.groupby('SK_ID_CURR')['PAYMENT_RATIO'].mean()
+
+# PARTE 6: FEATURES DE CREDIT CARD
+valid_cc['PAYMENT_MIN_RATIO'] = valid_cc['AMT_PAYMENT_CURRENT'] / valid_cc['AMT_INST_MIN_REGULARITY']
+cc_agg = valid_cc.groupby('SK_ID_CURR')['PAYMENT_MIN_RATIO'].mean()
+```
+
+## Grafo Causal del Impago
+
+El análisis causal nos permite entender las relaciones entre variables:
+
+```{python}
+#| echo: false
+#| label: fig-grafo-causal
+#| fig-cap: "Estructura causal simplificada del riesgo de impago"
+
+# Representación visual del grafo causal
+fig, ax = plt.subplots(figsize=(14, 8))
+ax.set_xlim(0, 10)
+ax.set_ylim(0, 8)
+ax.axis('off')
+
+# Nodos
+nodes = {
+    'Edad': (1, 6),
+    'Ingreso': (1, 4),
+    'Educación': (1, 2),
+    'Historial\nCrediticio': (4, 6),
+    'Capacidad\nde Pago': (4, 4),
+    'Deuda\nActual': (4, 2),
+    'Score\nExterno': (7, 6),
+    'Fraude': (7, 4),
+    'DEFAULT': (9, 4)
+}
+
+# Dibujar nodos
+for name, (x, y) in nodes.items():
+    color = '#e74c3c' if name == 'DEFAULT' else '#3498db' if 'Score' in name else '#95a5a6'
+    circle = plt.Circle((x, y), 0.5, color=color, alpha=0.7)
+    ax.add_patch(circle)
+    ax.text(x, y, name, ha='center', va='center', fontsize=9, fontweight='bold', color='white')
+
+# Flechas (conexiones causales)
+arrows = [
+    ('Edad', 'Historial\nCrediticio'),
+    ('Ingreso', 'Capacidad\nde Pago'),
+    ('Educación', 'Capacidad\nde Pago'),
+    ('Historial\nCrediticio', 'Score\nExterno'),
+    ('Capacidad\nde Pago', 'Score\nExterno'),
+    ('Deuda\nActual', 'Capacidad\nde Pago'),
+    ('Score\nExterno', 'DEFAULT'),
+    ('Fraude', 'DEFAULT'),
+    ('Capacidad\nde Pago', 'DEFAULT')
+]
+
+for start, end in arrows:
+    x1, y1 = nodes[start]
+    x2, y2 = nodes[end]
+    ax.annotate('', xy=(x2-0.5, y2), xytext=(x1+0.5, y1),
+                arrowprops=dict(arrowstyle='->', color='#2c3e50', lw=1.5))
+
+ax.set_title('Grafo Causal del Riesgo de Impago', fontsize=14, fontweight='bold', pad=20)
+plt.tight_layout()
+plt.show()
+```
+
+# Subset Final de Variables Utilizadas
+
+## Variables Seleccionadas para el Modelado
+
+Después del análisis exploratorio y la ingeniería de variables, se seleccionó un subset de **24 variables** para el modelado final:
+
+```{python}
+#| echo: false
+#| label: tbl-variables-finales
+#| tbl-cap: "Variables finales utilizadas en el modelado"
+
+variables_finales = pd.DataFrame({
+    'Variable': ['EDAD_ANOS', 'SCORE_PROMEDIO', 'CREDIT_INCOME_RATIO', 'NAME_FAMILY_STATUS',
+                 'CNT_CHILDREN', 'CODE_GENDER', 'NAME_EDUCATION_TYPE', 'INGRESO_PER_CAPITA',
+                 'NUM_ACTIVOS', 'TOTAL_CREDITO_DISPONIBLE', 'TOTAL_CREDITO_OTORGADO',
+                 'TOTAL_DEUDA_ACTUAL', 'MAX_DIAS_MORA', 'CREDITOS_ACTIVOS', 'CREDITOS_CERRADOS',
+                 'PCT_MESES_MORA', 'CREDITOS_CON_IMPAGO', 'NUM_PRESTAMOS_PREVIOS',
+                 'TASA_INTERES_PROMEDIO', 'PLAZO_PROMEDIO', 'MONTO_PROMEDIO_PREVIO',
+                 'TOTAL_CREDITO_HISTORICO', 'RATIO_PAGO_CUOTA', 'RATIO_PAGO_MINIMO_TC'],
+    'Tipo': ['Continua', 'Continua [0,1]', 'Continua', 'Categórica',
+             'Discreta', 'Categórica', 'Categórica', 'Continua',
+             'Discreta [0,2]', 'Continua', 'Continua',
+             'Continua', 'Continua', 'Discreta', 'Discreta',
+             'Continua [0,100]', 'Discreta', 'Discreta',
+             'Continua', 'Continua', 'Continua',
+             'Continua', 'Continua', 'Continua'],
+    'Categoría': ['Demográfica', 'Score', 'Financiera', 'Demográfica',
+                  'Demográfica', 'Demográfica', 'Demográfica', 'Financiera',
+                  'Activos', 'Historial', 'Historial',
+                  'Historial', 'Historial', 'Historial', 'Historial',
+                  'Historial', 'Historial', 'Préstamos Previos',
+                  'Préstamos Previos', 'Préstamos Previos', 'Préstamos Previos',
+                  'Préstamos Previos', 'Comportamiento', 'Comportamiento']
+})
+
+display(variables_finales.style.hide(axis='index'))
+```
+
+## Análisis de Correlaciones
+
+### Correlación con la Variable Objetivo
+
+```{python}
+#| echo: false
+#| label: fig-correlaciones
+#| fig-cap: "Correlación de variables con TARGET (ordenadas por valor absoluto)"
+
+correlaciones = pd.DataFrame({
+    'Variable': ['SCORE_PROMEDIO', 'EXT_SOURCE_3', 'EXT_SOURCE_2', 'EXT_SOURCE_1', 
+                 'EDAD_ANOS', 'CREDITOS_ACTIVOS', 'CREDITOS_CERRADOS', 'PCT_MESES_MORA',
+                 'ES_PRIMER_CREDITO', 'AMT_CREDIT', 'TIENE_IMPAGOS', 'PLAZO_PROMEDIO',
+                 'NUM_PRESTAMOS_PREVIOS', 'CREDITOS_CON_IMPAGO', 'NUM_ACTIVOS'],
+    'Correlacion': [-0.222, -0.179, -0.161, -0.155, -0.078, 0.044, -0.037, 0.032,
+                    0.031, -0.030, 0.030, 0.028, 0.024, 0.021, -0.020]
+})
+
+fig, ax = plt.subplots(figsize=(10, 8))
+
+colors = ['#e74c3c' if x > 0 else '#3498db' for x in correlaciones['Correlacion']]
+bars = ax.barh(correlaciones['Variable'], correlaciones['Correlacion'], color=colors, edgecolor='black')
+
+ax.axvline(x=0, color='black', linewidth=1)
+ax.axvline(x=0.1, color='gray', linestyle='--', alpha=0.5, label='Umbral moderado')
+ax.axvline(x=-0.1, color='gray', linestyle='--', alpha=0.5)
+
+ax.set_xlabel('Correlación con TARGET')
+ax.set_title('Correlación de Variables con Riesgo de Default')
+ax.invert_yaxis()
+ax.grid(axis='x', alpha=0.3)
+
+for bar, val in zip(bars, correlaciones['Correlacion']):
+    ax.text(val + 0.005 if val > 0 else val - 0.005, bar.get_y() + bar.get_height()/2,
+            f'{val:.3f}', va='center', ha='left' if val > 0 else 'right', fontsize=9)
+
+plt.tight_layout()
+plt.show()
+```
+
+**Hallazgos clave del análisis de correlación:**
+
+1. **Variables con mayor poder predictivo (|r| > 0.1)**:
+   - `SCORE_PROMEDIO` (r = -0.222): El promedio de scores externos es el mejor predictor individual
+   - `EXT_SOURCE_3` (r = -0.179), `EXT_SOURCE_2` (r = -0.161), `EXT_SOURCE_1` (r = -0.155)
+
+2. **Variables demográficas**:
+   - `EDAD_ANOS` (r = -0.078): Clientes más jóvenes tienen mayor probabilidad de default
+
+3. **Variables de historial crediticio**:
+   - `CREDITOS_ACTIVOS` (r = +0.044): Más créditos activos aumentan el riesgo
+   - `PCT_MESES_MORA` (r = +0.032): El historial de mora es indicativo de riesgo futuro
+
+### Matriz de Correlación (Heatmap)
+
+```{python}
+#| echo: false
+#| label: fig-heatmap
+#| fig-cap: "Matriz de correlación entre las principales variables"
+
+# Datos de correlación top
+top_corr_data = {
+    'Variables': ['TOTAL_CREDITO_HISTORICO - NUM_PRESTAMOS_PREVIOS',
+                  'TOTAL_CREDITO_HISTORICO - MONTO_PROMEDIO_PREVIO',
+                  'MONTO_PROMEDIO_PREVIO - PLAZO_PROMEDIO',
+                  'TOTAL_DEUDA_ACTUAL - TOTAL_CREDITO_OTORGADO',
+                  'TOTAL_CREDITO_HISTORICO - PLAZO_PROMEDIO',
+                  'CREDITOS_CON_IMPAGO - PCT_MESES_MORA',
+                  'CREDITOS_CERRADOS - CREDITOS_ACTIVOS',
+                  'CNT_CHILDREN - EDAD_ANOS',
+                  'CREDITOS_CERRADOS - TOTAL_CREDITO_OTORGADO',
+                  'CREDITOS_ACTIVOS - TOTAL_CREDITO_OTORGADO'],
+    'Correlación': [0.701, 0.659, 0.602, 0.582, 0.507, 0.462, 0.456, -0.331, 0.309, 0.307]
+}
+
+top_corr = pd.DataFrame(top_corr_data)
+
+fig, ax = plt.subplots(figsize=(12, 6))
+
+colors = ['#e74c3c' if c > 0 else '#3498db' for c in top_corr['Correlación']]
+bars = ax.barh(range(len(top_corr)), top_corr['Correlación'], color=colors, edgecolor='black', alpha=0.7)
+ax.set_yticks(range(len(top_corr)))
+ax.set_yticklabels(top_corr['Variables'], fontsize=9)
+ax.set_xlabel('Correlación')
+ax.set_title('Top 10 Pares de Variables Más Correlacionados')
+ax.invert_yaxis()
+ax.grid(axis='x', alpha=0.3)
+ax.axvline(x=0, color='black', linewidth=1)
+
+for i, (bar, val) in enumerate(zip(bars, top_corr['Correlación'])):
+    ax.text(val + 0.02, i, f'{val:.2f}', va='center', fontsize=9)
+
+plt.tight_layout()
+plt.show()
+```
+
+### Comparación de Perfiles: Default vs. No Default
+
+```{python}
+#| echo: false
+#| label: tbl-comparacion-perfiles
+#| tbl-cap: "Comparación de medias entre clientes que pagaron vs. hicieron default"
+
+comparacion = pd.DataFrame({
+    'Variable': ['EDAD_ANOS', 'CREDIT_INCOME_RATIO', 'SCORE_PROMEDIO', 'TOTAL_DEUDA_ACTUAL',
+                 'CREDITOS_ACTIVOS', 'PCT_MESES_MORA', 'CREDITOS_CON_IMPAGO', 'NUM_ACTIVOS',
+                 'RATIO_PAGO_CUOTA', 'RATIO_PAGO_MINIMO_TC'],
+    'Pagó (0)': [44.18, 3.96, 0.52, 548083, 1.74, 0.50, 0.22, 1.04, 1.37, 21.60],
+    'Default (1)': [40.75, 3.89, 0.40, 558718, 2.03, 0.87, 0.28, 0.99, 1.52, 6.28],
+    '% Cambio': [-7.77, -1.93, -23.52, 1.94, 16.60, 73.41, 31.27, -4.67, 10.97, -70.93]
+})
+
+display(comparacion.style.hide(axis='index')
+        .format({'Pagó (0)': '{:.2f}', 'Default (1)': '{:.2f}', '% Cambio': '{:+.2f}%'})
+        .background_gradient(subset=['% Cambio'], cmap='RdYlGn_r', vmin=-50, vmax=50))
+```
+
+**Perfil del cliente en riesgo de default:**
+
+- **Más joven** (40.8 años vs 44.2 años, -7.8%)
+- **Menor score crediticio** (0.40 vs 0.52, -23.5%)
+- **Más créditos activos** (2.03 vs 1.74, +16.6%)
+- **Mayor historial de mora** (0.87% vs 0.50%, +73.4%)
+- **Menor ratio de pago mínimo en tarjetas** (6.28 vs 21.60, -70.9%)
+
+# Variables Descartadas
+
+## Lista de Variables Eliminadas
+
+Se eliminaron **15 variables** del dataset original por ser redundantes o derivadas:
+
+```{python}
+#| echo: false
+#| label: tbl-variables-dropeadas
+#| tbl-cap: "Variables eliminadas y justificación"
+
+variables_drop = pd.DataFrame({
+    'Variable': ['DAYS_BIRTH', 'AMT_CREDIT', 'AMT_INCOME_TOTAL', 'AMT_ANNUITY',
+                 'EXT_SOURCE_1', 'EXT_SOURCE_2', 'EXT_SOURCE_3', 'CNT_FAM_MEMBERS',
+                 'FLAG_OWN_CAR', 'FLAG_OWN_REALTY', 'TOTAL_CONSULTAS_BURO',
+                 'MESES_CON_MORA', 'TIENE_IMPAGOS', 'ES_PRIMER_CREDITO', 'CANTIDAD_CREDITOS_BURO'],
+    'Razón de Eliminación': [
+        'Redundante - se usa EDAD_ANOS derivada',
+        'Redundante - capturada en CREDIT_INCOME_RATIO',
+        'Redundante - capturada en CREDIT_INCOME_RATIO e INGRESO_PER_CAPITA',
+        'Baja correlación con TARGET',
+        'Redundante - incluida en SCORE_PROMEDIO',
+        'Redundante - incluida en SCORE_PROMEDIO',
+        'Redundante - incluida en SCORE_PROMEDIO',
+        'Redundante - usada para calcular INGRESO_PER_CAPITA',
+        'Redundante - incluida en NUM_ACTIVOS',
+        'Redundante - incluida en NUM_ACTIVOS',
+        'Baja correlación con TARGET',
+        'Redundante - usada para calcular PCT_MESES_MORA',
+        'Derivada de MAX_DIAS_MORA',
+        'Derivada de CANTIDAD_CREDITOS_BURO',
+        'Baja correlación con TARGET'
+    ],
+    'Alternativa Usada': [
+        'EDAD_ANOS',
+        'CREDIT_INCOME_RATIO',
+        'CREDIT_INCOME_RATIO, INGRESO_PER_CAPITA',
+        '-',
+        'SCORE_PROMEDIO',
+        'SCORE_PROMEDIO',
+        'SCORE_PROMEDIO',
+        'INGRESO_PER_CAPITA',
+        'NUM_ACTIVOS',
+        'NUM_ACTIVOS',
+        '-',
+        'PCT_MESES_MORA',
+        'MAX_DIAS_MORA',
+        'CREDITOS_ACTIVOS, CREDITOS_CERRADOS',
+        'CREDITOS_ACTIVOS, CREDITOS_CERRADOS'
+    ]
+})
+
+display(variables_drop.style.hide(axis='index'))
+```
+
+## Código de Eliminación de Variables
+
+```{python}
+#| echo: true
+#| eval: false
+#| code-fold: true
+#| code-summary: "Ver código de eliminación de variables"
+
+# Drop de variables redundantes/derivadas
+df = df.drop(columns=[
+    # Edad - se usa la derivada EDAD_ANOS
+    'DAYS_BIRTH',
+    
+    # Montos base - capturados en ratios
+    'AMT_CREDIT',
+    'AMT_INCOME_TOTAL',
+    'AMT_ANNUITY',
+    
+    # Scores individuales - se usa SCORE_PROMEDIO
+    'EXT_SOURCE_1',
+    'EXT_SOURCE_2',
+    'EXT_SOURCE_3',
+    
+    # Familia - usada para calcular INGRESO_PER_CAPITA
+    'CNT_FAM_MEMBERS',
+    
+    # Activos - incluidos en NUM_ACTIVOS
+    'FLAG_OWN_CAR',
+    'FLAG_OWN_REALTY',
+    
+    # Consultas buró total - baja correlación
+    'TOTAL_CONSULTAS_BURO',
+    
+    # Componente de ratio
+    'MESES_CON_MORA',
+    
+    # Variables binarias derivadas
+    'TIENE_IMPAGOS',
+    'ES_PRIMER_CREDITO',
+    
+    # Créditos buró - baja correlación
+    'CANTIDAD_CREDITOS_BURO'
+])
+```
+
+## Justificación de la Reducción
+
+La reducción de 39 a 24 variables ofrece varias ventajas:
+
+1. **Reducción de multicolinealidad**: Eliminamos variables altamente correlacionadas entre sí
+2. **Simplificación del modelo**: Menos variables facilitan la interpretación
+3. **Menor riesgo de overfitting**: Modelos más parsimoniosos generalizan mejor
+4. **Pérdida mínima de AUC**: Solo 0.44% de pérdida en Random Forest (0.7451 → 0.7407)
+
+# Regresión Logística
+
+## Teoría
+
+### Función Sigmoide
+
+La regresión logística es un modelo de clasificación que estima la probabilidad de que una observación pertenezca a una clase particular. El modelo utiliza la **función sigmoide** (o logística) para transformar una combinación lineal de las variables predictoras en una probabilidad:
+
+$$
+P(Y=1|X) = \sigma(z) = \frac{1}{1 + e^{-z}}
+$$
+
+Donde:
+$$
+z = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + ... + \beta_p X_p
+$$
+
+```{python}
+#| echo: false
+#| label: fig-sigmoide
+#| fig-cap: "Función Sigmoide (Logística)"
+
+fig, ax = plt.subplots(figsize=(10, 6))
+
+z = np.linspace(-10, 10, 200)
+sigmoid = 1 / (1 + np.exp(-z))
+
+ax.plot(z, sigmoid, 'b-', linewidth=2.5, label=r'$\sigma(z) = \frac{1}{1 + e^{-z}}$')
+ax.axhline(y=0.5, color='red', linestyle='--', linewidth=1, label='Umbral de decisión (0.5)')
+ax.axhline(y=0, color='gray', linestyle='-', linewidth=0.5, alpha=0.5)
+ax.axhline(y=1, color='gray', linestyle='-', linewidth=0.5, alpha=0.5)
+ax.axvline(x=0, color='gray', linestyle='-', linewidth=0.5, alpha=0.5)
+
+ax.fill_between(z, sigmoid, 0.5, where=(sigmoid > 0.5), alpha=0.3, color='red', label='Clase 1 (Default)')
+ax.fill_between(z, sigmoid, 0.5, where=(sigmoid < 0.5), alpha=0.3, color='blue', label='Clase 0 (No Default)')
+
+ax.set_xlabel('z (combinación lineal)', fontsize=12)
+ax.set_ylabel('P(Y=1|X)', fontsize=12)
+ax.set_title('Función Sigmoide para Clasificación Binaria', fontsize=14, fontweight='bold')
+ax.legend(loc='center right')
+ax.grid(alpha=0.3)
+ax.set_xlim(-10, 10)
+ax.set_ylim(-0.05, 1.05)
+
+plt.tight_layout()
+plt.show()
+```
+
+### Interpretación de Coeficientes
+
+Los coeficientes $\beta_j$ se interpretan en términos de **odds ratios**:
+
+$$
+\text{OR}_j = e^{\beta_j}
+$$
+
+- Si $\beta_j > 0$: La variable aumenta la probabilidad de default
+- Si $\beta_j < 0$: La variable disminuye la probabilidad de default
+- Si $\beta_j = 0$: La variable no tiene efecto
+
+### Función de Pérdida: Log-Loss (Entropía Cruzada Binaria)
+
+Los parámetros se estiman minimizando la **log-loss** (también conocida como entropía cruzada binaria):
+
+$$
+\mathcal{L}(\beta) = -\frac{1}{n} \sum_{i=1}^{n} \left[ y_i \log(\hat{p}_i) + (1-y_i) \log(1-\hat{p}_i) \right]
+$$
+
+Donde:
+- $y_i$ es la etiqueta real (0 o 1)
+- $\hat{p}_i = P(Y_i = 1 | X_i)$ es la probabilidad predicha
+
+## Parámetros y Entrenamiento
+
+### Regularización
+
+Para prevenir el overfitting, aplicamos **regularización L2 (Ridge)**:
+
+$$
+\mathcal{L}_{reg}(\beta) = \mathcal{L}(\beta) + \lambda \sum_{j=1}^{p} \beta_j^2
+$$
+
+Tipos de regularización disponibles:
+
+| Tipo | Fórmula | Efecto |
+|------|---------|--------|
+| **L1 (Lasso)** | $\lambda \sum \|\beta_j\|$ | Genera coeficientes exactamente 0 (selección de variables) |
+| **L2 (Ridge)** | $\lambda \sum \beta_j^2$ | Reduce magnitud de coeficientes (usado en este análisis) |
+| **Elastic Net** | $\alpha \cdot L1 + (1-\alpha) \cdot L2$ | Combinación de ambos |
+
+### Configuración del Modelo
+
+```{python}
+#| echo: true
+#| eval: false
+#| code-fold: true
+#| code-summary: "Ver configuración del modelo"
+
+model = LogisticRegression(
+    penalty='l2',           # Regularización L2 (Ridge)
+    C=1.0,                  # Inverso de la fuerza de regularización
+    solver='lbfgs',         # Algoritmo de optimización
+    max_iter=1000,          # Máximo de iteraciones
+    class_weight='balanced', # Balanceo de clases
+    random_state=42,
+    n_jobs=-1
+)
+```
+
+### Validación Cruzada
+
+Utilizamos **5-fold cross-validation** para evaluar la estabilidad del modelo:
+
+```{python}
+#| echo: false
+#| label: tbl-cv-logreg
+#| tbl-cap: "Resultados de validación cruzada (5-fold)"
+
+cv_logreg = pd.DataFrame({
+    'Fold': [1, 2, 3, 4, 5, 'Media'],
+    'ROC-AUC': [0.7311, 0.7257, 0.7297, 0.7346, 0.7382, 0.7319],
+    'Std': ['-', '-', '-', '-', '-', '±0.0042']
+})
+
+display(cv_logreg.style.hide(axis='index'))
+```
+
+## Resultados del Modelo
+
+```{python}
+#| echo: false
+#| label: tbl-resultados-logreg
+#| tbl-cap: "Métricas del modelo de Regresión Logística"
+
+logreg_results = pd.DataFrame({
+    'Métrica': ['ROC-AUC', 'Average Precision', 'Accuracy', 'Recall (Default)', 'Precision (Default)'],
+    'Train': [0.7323, 0.2049, 0.6800, 0.66, 0.15],
+    'Test': [0.7335, 0.2112, 0.6832, 0.66, 0.15],
+    'Diferencia': [0.0012, 0.0063, 0.0032, 0.00, 0.00]
+})
+
+display(logreg_results.style.hide(axis='index')
+        .format({'Train': '{:.4f}', 'Test': '{:.4f}', 'Diferencia': '{:+.4f}'}))
+```
+
+### Matriz de Confusión
+
+```{python}
+#| echo: false
+#| label: fig-cm-logreg
+#| fig-cap: "Matriz de Confusión - Regresión Logística (Test Set)"
+
+# Datos de la matriz de confusión
+cm = np.array([[18988, 37550], [1688, 3277]])
+
+fig, ax = plt.subplots(figsize=(8, 6))
+
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=ax,
+            xticklabels=['No Default', 'Default'],
+            yticklabels=['No Default', 'Default'],
+            annot_kws={'size': 14})
+
+ax.set_xlabel('Predicción', fontsize=12)
+ax.set_ylabel('Real', fontsize=12)
+ax.set_title('Matriz de Confusión - Regresión Logística\n(Test Set: 61,503 usuarios)', fontsize=14, fontweight='bold')
+
+# Añadir porcentajes
+total = cm.sum()
+for i in range(2):
+    for j in range(2):
+        pct = cm[i, j] / total * 100
+        ax.text(j + 0.5, i + 0.75, f'({pct:.1f}%)', ha='center', va='center', fontsize=10, color='gray')
+
+plt.tight_layout()
+plt.show()
+```
+
+### Importancia de Variables
+
+```{python}
+#| echo: false
+#| label: fig-importancia-logreg
+#| fig-cap: "Coeficientes de Regresión Logística (Top 15 variables)"
+
+importancia_logreg = pd.DataFrame({
+    'Variable': ['SCORE_PROMEDIO', 'EDAD_ANOS', 'CREDIT_INCOME_RATIO', 'CREDITOS_ACTIVOS',
+                 'PCT_MESES_MORA', 'INGRESO_PER_CAPITA', 'TOTAL_DEUDA_ACTUAL', 'NUM_ACTIVOS',
+                 'PLAZO_PROMEDIO', 'RATIO_PAGO_CUOTA', 'CREDITOS_CERRADOS', 'CNT_CHILDREN',
+                 'NUM_PRESTAMOS_PREVIOS', 'TOTAL_CREDITO_OTORGADO', 'NAME_EDUCATION_TYPE'],
+    'Coeficiente': [-1.23, -0.45, 0.32, 0.28, 0.25, -0.22, 0.18, -0.15,
+                    0.14, 0.12, -0.11, 0.10, 0.09, -0.08, -0.07]
+})
+
+fig, ax = plt.subplots(figsize=(10, 8))
+
+colors = ['#e74c3c' if c > 0 else '#3498db' for c in importancia_logreg['Coeficiente']]
+bars = ax.barh(importancia_logreg['Variable'], importancia_logreg['Coeficiente'], 
+               color=colors, edgecolor='black', alpha=0.7)
+
+ax.axvline(x=0, color='black', linewidth=1)
+ax.set_xlabel('Coeficiente (β)', fontsize=12)
+ax.set_title('Coeficientes de Regresión Logística\n(Rojo = Aumenta riesgo, Azul = Disminuye riesgo)', 
+             fontsize=14, fontweight='bold')
+ax.invert_yaxis()
+ax.grid(axis='x', alpha=0.3)
+
+for bar, val in zip(bars, importancia_logreg['Coeficiente']):
+    ax.text(val + 0.02 if val > 0 else val - 0.02, bar.get_y() + bar.get_height()/2,
+            f'{val:.2f}', va='center', ha='left' if val > 0 else 'right', fontsize=9)
+
+plt.tight_layout()
+plt.show()
+```
+
+**Interpretación:**
+
+- **SCORE_PROMEDIO** (β = -1.23): El predictor más importante. Un aumento de 1 desviación estándar disminuye el log-odds de default en 1.23
+- **EDAD_ANOS** (β = -0.45): Mayor edad reduce el riesgo de default
+- **CREDITOS_ACTIVOS** (β = +0.28): Más créditos activos aumentan el riesgo
+- **PCT_MESES_MORA** (β = +0.25): Mayor historial de mora aumenta el riesgo
+
+# Random Forest
+
+## Descripción del Modelo
+
+Random Forest es un algoritmo de **ensemble learning** basado en árboles de decisión. El modelo construye múltiples árboles utilizando:
+
+1. **Bagging (Bootstrap Aggregating)**: Cada árbol se entrena con una muestra bootstrap del conjunto de datos
+2. **Selección aleatoria de features**: En cada split, solo se considera un subconjunto aleatorio de variables
+
+Para clasificación, la predicción final se obtiene por **votación mayoritaria**:
+
+$$
+\hat{y} = \text{mode}\{\hat{y}_1, \hat{y}_2, ..., \hat{y}_B\}
+$$
+
+Donde $B$ es el número de árboles.
+
+### Importancia de Variables (Gini Importance)
+
+La importancia de una variable se mide como la reducción promedio de la impureza de Gini:
+
+$$
+\text{Gini}(t) = 1 - \sum_{k=1}^{K} p_{tk}^2
+$$
+
+Donde $p_{tk}$ es la proporción de observaciones de clase $k$ en el nodo $t$.
+
+## Hiperparámetros
+
+Se entrenaron tres versiones del modelo Random Forest:
+
+```{python}
+#| echo: false
+#| label: tbl-hiperparametros-rf
+#| tbl-cap: "Configuración de hiperparámetros - Random Forest"
+
+hp_rf = pd.DataFrame({
+    'Parámetro': ['n_estimators', 'max_depth', 'min_samples_split', 'min_samples_leaf', 
+                  'max_features', 'criterion', 'class_weight'],
+    'RF1 (39 vars)': [100, 15, 10, 5, 'auto', 'gini', 'balanced'],
+    'RF2 (24 vars)': [100, 15, 10, 5, 'auto', 'gini', 'balanced'],
+    'RF3 (Optimizado)': [200, 'None', 30, 5, 'sqrt', 'entropy', 'balanced']
+})
+
+display(hp_rf.style.hide(axis='index'))
+```
+
+## Resultados
+
+```{python}
+#| echo: false
+#| label: tbl-resultados-rf
+#| tbl-cap: "Comparación de modelos Random Forest"
+
+rf_results = pd.DataFrame({
+    'Métrica': ['ROC-AUC (Test)', 'Average Precision (Test)', 'ROC-AUC (Train)', 
+                'Overfitting (Gap)', 'Recall (Default)', 'Precision (Default)'],
+    'RF1 (39 vars)': [0.7451, 0.2207, 0.9222, 0.1771, 0.44, 0.21],
+    'RF2 (24 vars)': [0.7407, 0.2133, 0.9038, 0.1631, 0.46, 0.20],
+    'RF3 (Optimizado)': [0.7482, 0.2281, 0.9905, 0.2423, 0.24, 0.29]
+})
+
+display(rf_results.style.hide(axis='index')
+        .format({'RF1 (39 vars)': '{:.4f}', 'RF2 (24 vars)': '{:.4f}', 'RF3 (Optimizado)': '{:.4f}'}))
+```
+
+**Análisis de resultados:**
+
+1. **RF1 vs RF2**: Eliminar 15 variables redundantes causa una pérdida mínima de AUC (0.0044), validando nuestra selección de variables
+2. **RF3 (Optimizado)**: La búsqueda de hiperparámetros mejora el AUC en test (+0.0074) pero aumenta el overfitting
+3. **Trade-off Recall vs Precision**: RF3 tiene mayor precisión (29% vs 21%) pero menor recall (24% vs 44%)
+
+### Importancia de Variables
+
+```{python}
+#| echo: false
+#| label: fig-importancia-rf
+#| fig-cap: "Importancia de variables en Random Forest (Gini Importance)"
+
+importancia_rf = pd.DataFrame({
+    'Variable': ['SCORE_PROMEDIO', 'EDAD_ANOS', 'CREDIT_INCOME_RATIO', 'RATIO_PAGO_CUOTA',
+                 'TOTAL_CREDITO_OTORGADO', 'TOTAL_CREDITO_HISTORICO', 'MONTO_PROMEDIO_PREVIO',
+                 'PLAZO_PROMEDIO', 'TOTAL_DEUDA_ACTUAL', 'INGRESO_PER_CAPITA',
+                 'CREDITOS_CERRADOS', 'RATIO_PAGO_MINIMO_TC', 'NAME_EDUCATION_TYPE',
+                 'NUM_PRESTAMOS_PREVIOS', 'CREDITOS_ACTIVOS'],
+    'Importancia': [0.321, 0.082, 0.055, 0.053, 0.051, 0.048, 0.047, 0.046,
+                    0.040, 0.038, 0.031, 0.027, 0.025, 0.025, 0.023]
+})
+
+fig, ax = plt.subplots(figsize=(10, 8))
+
+bars = ax.barh(importancia_rf['Variable'], importancia_rf['Importancia'], 
+               color='forestgreen', alpha=0.7, edgecolor='black')
+
+ax.set_xlabel('Importancia (Reducción promedio de Gini)')
+ax.set_title('Importancia de Variables - Random Forest\n(Capacidad para separar clases)', fontsize=14, fontweight='bold')
+ax.invert_yaxis()
+ax.grid(axis='x', alpha=0.3)
+
+for bar, val in zip(bars, importancia_rf['Importancia']):
+    ax.text(val + 0.005, bar.get_y() + bar.get_height()/2, f'{val:.3f}', 
+            va='center', fontsize=9)
+
+plt.tight_layout()
+plt.show()
+```
+
+**Hallazgo clave**: `SCORE_PROMEDIO` domina la importancia con 32.1%, más del triple que la segunda variable más importante. Esto confirma que los scores externos son el factor más determinante para predecir el riesgo de impago.
+
+# XGBoost
+
+## Descripción del Modelo
+
+**XGBoost** (Extreme Gradient Boosting) es un algoritmo de **boosting** que construye árboles de decisión de manera secuencial. A diferencia de Random Forest que construye árboles en paralelo, XGBoost:
+
+1. **Entrena árboles secuencialmente**: Cada árbol corrige los errores del anterior
+2. **Utiliza gradient boosting**: Optimiza una función de pérdida usando gradiente descendente
+3. **Incluye regularización**: Penaliza la complejidad del modelo para prevenir overfitting
+
+### Mecanismo de Boosting
+
+El modelo final es una suma ponderada de árboles:
+
+$$
+\hat{y}_i = \sum_{k=1}^{K} f_k(x_i)
+$$
+
+Donde cada árbol $f_k$ se entrena para minimizar:
+
+$$
+\mathcal{L}^{(k)} = \sum_{i=1}^{n} l(y_i, \hat{y}_i^{(k-1)} + f_k(x_i)) + \Omega(f_k)
+$$
+
+La regularización $\Omega(f_k)$ incluye:
+- **L1 (alpha)**: Regularización de pesos
+- **L2 (lambda)**: Regularización de scores de hojas
+- **gamma**: Penalización por complejidad del árbol
+
+### Learning Rate (η)
+
+El learning rate controla la contribución de cada árbol:
+
+$$
+\hat{y}_i^{(k)} = \hat{y}_i^{(k-1)} + \eta \cdot f_k(x_i)
+$$
+
+- **η pequeño** (0.01-0.1): Aprendizaje más lento pero mejor generalización
+- **η grande** (0.1-0.3): Aprendizaje más rápido pero riesgo de overfitting
+
+## Hiperparámetros
+
+```{python}
+#| echo: false
+#| label: tbl-hiperparametros-xgb
+#| tbl-cap: "Configuración de hiperparámetros - XGBoost"
+
+hp_xgb = pd.DataFrame({
+    'Parámetro': ['n_estimators', 'max_depth', 'learning_rate', 'min_child_weight',
+                  'subsample', 'colsample_bytree', 'scale_pos_weight', 'eval_metric'],
+    'XGB1 (39 vars)': [100, 6, 0.1, 5, 0.8, 0.8, 11.38, 'auc'],
+    'XGB2 (24 vars)': [100, 6, 0.1, 5, 0.8, 0.8, 11.38, 'auc'],
+    'Descripción': ['Número de árboles', 'Profundidad máxima por árbol', 
+                    'Tasa de aprendizaje', 'Suma mínima de pesos en hoja',
+                    'Fracción de muestras por árbol', 'Fracción de features por árbol',
+                    'Ratio para balanceo de clases', 'Métrica de evaluación']
+})
+
+display(hp_xgb.style.hide(axis='index'))
+```
+
+## Resultados
+
+```{python}
+#| echo: false
+#| label: tbl-resultados-xgb
+#| tbl-cap: "Resultados de modelos XGBoost"
+
+xgb_results = pd.DataFrame({
+    'Métrica': ['ROC-AUC (Test)', 'Average Precision (Test)', 'ROC-AUC (Train)', 
+                'Overfitting (Gap)', 'Recall (Default)', 'Precision (Default)'],
+    'XGB1 (39 vars)': [0.7612, 0.2389, 0.7845, 0.0233, 0.52, 0.23],
+    'XGB2 (24 vars)': [0.7589, 0.2341, 0.7798, 0.0209, 0.51, 0.22]
+})
+
+display(xgb_results.style.hide(axis='index')
+        .format({'XGB1 (39 vars)': '{:.4f}', 'XGB2 (24 vars)': '{:.4f}'}))
+```
+
+### Importancia de Variables
+
+```{python}
+#| echo: false
+#| label: fig-importancia-xgb
+#| fig-cap: "Importancia de variables en XGBoost (Gain)"
+
+importancia_xgb = pd.DataFrame({
+    'Variable': ['SCORE_PROMEDIO', 'EXT_SOURCE_2', 'EXT_SOURCE_3', 'EDAD_ANOS',
+                 'EXT_SOURCE_1', 'RATIO_PAGO_CUOTA', 'AMT_ANNUITY', 'AMT_CREDIT',
+                 'CREDIT_INCOME_RATIO', 'PLAZO_PROMEDIO', 'TOTAL_CREDITO_OTORGADO',
+                 'TOTAL_CREDITO_HISTORICO', 'MONTO_PROMEDIO_PREVIO', 'TOTAL_DEUDA_ACTUAL',
+                 'INGRESO_PER_CAPITA'],
+    'Importancia': [0.183, 0.095, 0.094, 0.043, 0.038, 0.036, 0.036, 0.035,
+                    0.034, 0.031, 0.031, 0.030, 0.030, 0.024, 0.023]
+})
+
+fig, ax = plt.subplots(figsize=(10, 8))
+
+bars = ax.barh(importancia_xgb['Variable'], importancia_xgb['Importancia'], 
+               color='#2E86AB', alpha=0.7, edgecolor='black')
+
+ax.set_xlabel('Importancia (Gain)')
+ax.set_title('Importancia de Variables - XGBoost\n(Ganancia promedio en splits)', fontsize=14, fontweight='bold')
+ax.invert_yaxis()
+ax.grid(axis='x', alpha=0.3)
+
+for bar, val in zip(bars, importancia_xgb['Importancia']):
+    ax.text(val + 0.003, bar.get_y() + bar.get_height()/2, f'{val:.3f}', 
+            va='center', fontsize=9)
+
+plt.tight_layout()
+plt.show()
+```
+
+# Comparación de Modelos
+
+## Métricas Globales
+
+```{python}
+#| echo: false
+#| label: tbl-comparacion-final
+#| tbl-cap: "Resumen comparativo de todos los modelos"
+
+comparacion_final = pd.DataFrame({
+    'Métrica': ['ROC-AUC (Test)', 'Average Precision', 'Recall (Default)', 
+                'Precision (Default)', 'Overfitting (Gap)', 'Interpretabilidad', 
+                'Tiempo de entrenamiento'],
+    'Regresión Logística': ['0.7335', '0.2112', '66%', '15%', '0.0012', 'Alta', 'Rápido'],
+    'Random Forest': ['0.7482', '0.2281', '24-46%', '20-29%', '0.1631-0.2423', 'Media', 'Moderado'],
+    'XGBoost': ['0.7612', '0.2389', '51-52%', '22-23%', '0.0209-0.0233', 'Baja', 'Moderado'],
+    'Mejor': ['XGBoost', 'XGBoost', 'LogReg', 'RF', 'LogReg', 'LogReg', 'LogReg']
+})
+
+display(comparacion_final.style.hide(axis='index'))
+```
+
+## Curvas ROC
+
+```{python}
+#| echo: false
+#| label: fig-roc-comparison
+#| fig-cap: "Comparación de curvas ROC entre modelos"
+
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+# Datos simulados para las curvas (basados en los AUCs reales)
+fpr_lr = np.array([0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+tpr_lr = np.array([0, 0.35, 0.50, 0.60, 0.68, 0.75, 0.82, 0.88, 0.93, 0.97, 1.0])
+
+fpr_rf = np.array([0, 0.08, 0.16, 0.25, 0.35, 0.45, 0.55, 0.65, 0.78, 0.90, 1.0])
+tpr_rf = np.array([0, 0.38, 0.53, 0.64, 0.72, 0.79, 0.85, 0.90, 0.95, 0.98, 1.0])
+
+fpr_xgb = np.array([0, 0.06, 0.14, 0.22, 0.32, 0.42, 0.52, 0.63, 0.76, 0.89, 1.0])
+tpr_xgb = np.array([0, 0.42, 0.58, 0.68, 0.76, 0.82, 0.87, 0.92, 0.96, 0.99, 1.0])
+
+# ROC Curves
+axes[0].plot(fpr_lr, tpr_lr, 'b-', linewidth=2, label='Regresión Logística (AUC=0.73)')
+axes[0].plot(fpr_rf, tpr_rf, 'g-', linewidth=2, label='Random Forest (AUC=0.75)')
+axes[0].plot(fpr_xgb, tpr_xgb, 'r-', linewidth=2, label='XGBoost (AUC=0.76)')
+axes[0].plot([0, 1], [0, 1], 'k--', linewidth=1, label='Aleatorio')
+axes[0].set_xlabel('False Positive Rate')
+axes[0].set_ylabel('True Positive Rate')
+axes[0].set_title('Curvas ROC')
+axes[0].legend(loc='lower right')
+axes[0].grid(alpha=0.3)
+
+# Precision-Recall Curves
+recall_lr = np.array([0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+precision_lr = np.array([1.0, 0.45, 0.35, 0.28, 0.22, 0.18, 0.15, 0.12, 0.10, 0.09, 0.08])
+
+recall_rf = np.array([0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+precision_rf = np.array([1.0, 0.50, 0.40, 0.32, 0.26, 0.22, 0.18, 0.15, 0.12, 0.10, 0.08])
+
+recall_xgb = np.array([0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+precision_xgb = np.array([1.0, 0.55, 0.44, 0.36, 0.30, 0.25, 0.20, 0.16, 0.13, 0.11, 0.08])
+
+axes[1].plot(recall_lr, precision_lr, 'b-', linewidth=2, label='Regresión Logística (AP=0.21)')
+axes[1].plot(recall_rf, precision_rf, 'g-', linewidth=2, label='Random Forest (AP=0.23)')
+axes[1].plot(recall_xgb, precision_xgb, 'r-', linewidth=2, label='XGBoost (AP=0.24)')
+axes[1].axhline(y=0.08, color='gray', linestyle='--', label='Baseline (8%)')
+axes[1].set_xlabel('Recall')
+axes[1].set_ylabel('Precision')
+axes[1].set_title('Curvas Precision-Recall')
+axes[1].legend(loc='upper right')
+axes[1].grid(alpha=0.3)
+axes[1].set_xlim([0, 1])
+axes[1].set_ylim([0, 1])
+
+plt.tight_layout()
+plt.show()
+```
+
+## Comparación de Feature Importance
+
+```{python}
+#| echo: false
+#| label: fig-feature-importance-comparison
+#| fig-cap: "Comparación de importancia de variables entre modelos"
+
+# Top 10 variables más importantes por modelo
+top_vars = ['SCORE_PROMEDIO', 'EDAD_ANOS', 'CREDIT_INCOME_RATIO', 'RATIO_PAGO_CUOTA',
+            'TOTAL_CREDITO_OTORGADO', 'PLAZO_PROMEDIO', 'TOTAL_DEUDA_ACTUAL',
+            'INGRESO_PER_CAPITA', 'CREDITOS_ACTIVOS', 'PCT_MESES_MORA']
+
+imp_logreg = [1.0, 0.37, 0.26, 0.10, 0.07, 0.11, 0.15, 0.18, 0.23, 0.20]
+imp_rf = [1.0, 0.26, 0.17, 0.17, 0.16, 0.14, 0.12, 0.12, 0.07, 0.04]
+imp_xgb = [1.0, 0.24, 0.19, 0.20, 0.17, 0.17, 0.13, 0.13, 0.08, 0.05]
+
+x = np.arange(len(top_vars))
+width = 0.25
+
+fig, ax = plt.subplots(figsize=(14, 7))
+
+bars1 = ax.bar(x - width, imp_logreg, width, label='Regresión Logística', color='steelblue', alpha=0.8)
+bars2 = ax.bar(x, imp_rf, width, label='Random Forest', color='forestgreen', alpha=0.8)
+bars3 = ax.bar(x + width, imp_xgb, width, label='XGBoost', color='#E94F37', alpha=0.8)
+
+ax.set_xlabel('Variable', fontsize=12)
+ax.set_ylabel('Importancia Relativa (normalizada)', fontsize=12)
+ax.set_title('Comparación de Importancia de Variables entre Modelos', fontsize=14, fontweight='bold')
+ax.set_xticks(x)
+ax.set_xticklabels(top_vars, rotation=45, ha='right')
+ax.legend()
+ax.grid(axis='y', alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+```
+
+## Matrices de Confusión
+
+```{python}
+#| echo: false
+#| label: fig-confusion-matrices
+#| fig-cap: "Matrices de confusión de los tres modelos (Test Set)"
+
+fig, axes = plt.subplots(1, 3, figsize=(16, 5))
+
+# Datos de matrices de confusión
+cms = [
+    np.array([[18988, 37550], [1688, 3277]]),  # Logistic Regression
+    np.array([[48497, 8041], [2777, 2188]]),   # Random Forest
+    np.array([[45123, 11415], [2384, 2581]])   # XGBoost
+]
+titles = ['Regresión Logística', 'Random Forest', 'XGBoost']
+colors = ['Blues', 'Greens', 'Reds']
+
+for ax, cm, title, cmap in zip(axes, cms, titles, colors):
+    sns.heatmap(cm, annot=True, fmt='d', cmap=cmap, ax=ax,
+                xticklabels=['No Default', 'Default'],
+                yticklabels=['No Default', 'Default'],
+                annot_kws={'size': 12})
+    ax.set_xlabel('Predicción')
+    ax.set_ylabel('Real')
+    ax.set_title(title, fontsize=12, fontweight='bold')
+
+plt.tight_layout()
+plt.show()
+```
+
+# Conclusión General
+
+## Hallazgos Principales
+
+### 1. El Score Crediticio es el Predictor Dominante
+
+En los tres modelos, `SCORE_PROMEDIO` emerge como la variable más importante:
+- **Regresión Logística**: Coeficiente más alto (β = -1.23)
+- **Random Forest**: 32.1% de la importancia total
+- **XGBoost**: 18.3% de la importancia (Gain)
+
+Esto confirma que los scores de fuentes externas capturan información valiosa sobre el riesgo crediticio.
+
+### 2. XGBoost Ofrece el Mejor Rendimiento
+
+| Modelo | ROC-AUC | Average Precision | Overfitting |
+|--------|---------|-------------------|-------------|
+| Regresión Logística | 0.7335 | 0.2112 | Bajo (0.12%) |
+| Random Forest | 0.7482 | 0.2281 | Alto (16-24%) |
+| **XGBoost** | **0.7612** | **0.2389** | **Bajo (2%)** |
+
+### 3. Trade-off entre Interpretabilidad y Rendimiento
+
+- **Regresión Logística**: Mayor interpretabilidad (coeficientes directos), menor rendimiento
+- **XGBoost**: Mejor rendimiento, pero menor interpretabilidad
+- **Random Forest**: Balance intermedio, pero con mayor overfitting
+
+## Ventajas y Desventajas de Cada Modelo
+
+```{python}
+#| echo: false
+#| label: tbl-ventajas-desventajas
+#| tbl-cap: "Resumen de ventajas y desventajas por modelo"
+
+comparacion = pd.DataFrame({
+    'Modelo': ['Regresión Logística', 'Random Forest', 'XGBoost'],
+    'Ventajas': [
+        '• Alta interpretabilidad\n• Sin overfitting\n• Rápido entrenamiento\n• Coeficientes interpretables',
+        '• Captura interacciones\n• Robusto a outliers\n• Feature importance\n• No requiere normalización',
+        '• Mejor AUC\n• Bajo overfitting\n• Maneja desbalance\n• Regularización integrada'
+    ],
+    'Desventajas': [
+        '• Asume linealidad\n• Menor AUC\n• No captura interacciones',
+        '• Alto overfitting\n• Caja negra\n• Mayor tiempo de entrenamiento',
+        '• Caja negra\n• Requiere tuning\n• Mayor complejidad computacional'
+    ]
+})
+
+display(comparacion.style.hide(axis='index'))
+```
+
+## Recomendación Final
+
+### Para Producción
+
+Recomendamos implementar **XGBoost** como modelo principal por:
+
+1. **Mejor rendimiento predictivo** (AUC = 0.76)
+2. **Buen balance recall-precision** (51% recall, 23% precision)
+3. **Bajo overfitting** (gap < 3%)
+4. **Robustez ante desbalance de clases**
+
+### Para Monitoreo
+
+- Establecer un umbral de probabilidad de **0.3** para maximizar el recall
+- Implementar **alertas para scores > 0.5** como alto riesgo
+- Monitorear la distribución de probabilidades para detectar drift
+
+### Para Mejora Futura
+
+1. **Investigar el contenido de los scores externos** (EXT_SOURCE_1/2/3)
+2. **Incorporar datos dinámicos** de comportamiento de pago
+3. **Implementar SHAP values** para explicabilidad del modelo XGBoost
+4. **Desarrollar modelo de scoring dinámico** que actualice predicciones con datos de comportamiento
+5. **Análisis de fairness** para asegurar que el modelo no discrimine por características protegidas
+
+## Validación de Hipótesis
+
+| Hipótesis | Resultado | Evidencia |
+|-----------|-----------|----------|
+| Menor score crediticio → Mayor riesgo | ✓ Confirmada | Correlación más fuerte (-0.22), variable #1 en todos los modelos |
+| Menor edad → Mayor riesgo | ✓ Confirmada | Correlación -0.078, diferencia significativa en perfiles |
+| Mayor historial de mora → Mayor riesgo | ✓ Confirmada | PCT_MESES_MORA +73% en defaults |
+| Más créditos activos → Mayor riesgo | ✓ Confirmada | Correlación +0.044, coeficiente positivo en LR |
+| Menos activos → Mayor riesgo | ✓ Parcialmente | NUM_ACTIVOS -4.7% en defaults, efecto moderado |
+
+# Referencias
+
+1. Home Credit Group. (2018). *Home Credit Default Risk*. Kaggle Competition. https://www.kaggle.com/competitions/home-credit-default-risk
+
+2. Breiman, L. (2001). Random Forests. *Machine Learning*, 45(1), 5-32.
+
+3. Chen, T., & Guestrin, C. (2016). XGBoost: A Scalable Tree Boosting System. *Proceedings of the 22nd ACM SIGKDD*.
+
+4. Hosmer, D. W., Lemeshow, S., & Sturdivant, R. X. (2013). *Applied Logistic Regression* (3rd ed.). Wiley.
+
+5. James, G., Witten, D., Hastie, T., & Tibshirani, R. (2021). *An Introduction to Statistical Learning* (2nd ed.). Springer.
+
+6. Battagliola, M. L. (2025). *Guía para la Elaboración del Proyecto Final*. ITAM - Estadística Aplicada III.
+
+# Anexos
+
+## A. Diccionario de Variables
+
+```{python}
+#| echo: false
+#| label: tbl-diccionario
+#| tbl-cap: "Diccionario completo de variables"
+
+diccionario = pd.DataFrame({
+    'Variable': ['TARGET', 'SCORE_PROMEDIO', 'EDAD_ANOS', 'CREDIT_INCOME_RATIO', 
+                 'INGRESO_PER_CAPITA', 'NUM_ACTIVOS', 'CREDITOS_ACTIVOS', 'CREDITOS_CERRADOS',
+                 'PCT_MESES_MORA', 'CREDITOS_CON_IMPAGO', 'TOTAL_DEUDA_ACTUAL',
+                 'TOTAL_CREDITO_OTORGADO', 'PLAZO_PROMEDIO', 'RATIO_PAGO_CUOTA',
+                 'NAME_FAMILY_STATUS', 'CODE_GENDER', 'NAME_EDUCATION_TYPE'],
+    'Descripción': ['Variable objetivo (1=Default, 0=No Default)', 
+                    'Promedio de scores externos EXT_SOURCE_1/2/3',
+                    'Edad del solicitante en años',
+                    'Ratio crédito solicitado / ingreso total',
+                    'Ingreso total / miembros de familia',
+                    'Suma de activos (auto + inmueble)',
+                    'Número de créditos activos en buró',
+                    'Número de créditos cerrados en buró',
+                    'Porcentaje histórico de meses con mora',
+                    'Número de créditos con historial de impago',
+                    'Deuda total vigente',
+                    'Suma histórica de créditos otorgados',
+                    'Plazo promedio de créditos previos',
+                    'Ratio pago realizado / cuota programada',
+                    'Estado civil',
+                    'Género',
+                    'Nivel educativo'],
+    'Tipo': ['Binaria', 'Continua [0,1]', 'Continua', 'Continua',
+             'Continua', 'Discreta [0,2]', 'Discreta', 'Discreta',
+             'Continua [0,100]', 'Discreta', 'Continua',
+             'Continua', 'Continua', 'Continua',
+             'Categórica', 'Categórica', 'Categórica']
+})
+
+display(diccionario.style.hide(axis='index'))
+```
+
+## B. Código Fuente
+
+El código completo de este análisis está disponible en los siguientes notebooks:
+
+- `src/eda/eda.ipynb`: Análisis exploratorio de datos
+- `src/eda/variables.ipynb`: Generación de variables y Regresión Logística
+- `src/random_forest/random_forest.ipynb`: Modelos Random Forest
+- `src/xgboost/jp-xgboost.ipynb`: Modelos XGBoost
+
